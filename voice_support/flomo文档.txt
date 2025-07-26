@@ -1,0 +1,1442 @@
+2025-06-11 09:05:38
+#办公室的日常
+
+太古城二期的办公室旁有一块拾级而下的休息区域，从一楼一直延伸到Ground，这个区域也算是办公楼区的内部公共空间，返工的早晨常有很多长者坐在那里叹冷气，这些长者大多是清早起来去买菜，回去的路上和朋友姐妹，到了中午就变成了附近打工人吃饭的地方，晚上又变成了长者聊天的地方，可能这也算是逼仄香港的独有文化，想必等我们这一代人老去的时候，是断不会想和办公室CBD这些地方还藕断丝连的
+
+2025-06-09 09:08:51
+#我们这代人
+
+每代人都有每代人的使命
+
+2025-05-28 22:07:45
+Here's the integrated code with MLflow tracking, focusing on experiment management, parameter logging, model tracking, and artifact storage:
+
+# -*- coding: utf-8 -*- """ Created on Fri Oct 27 16:23:06 2023 @author: RoryGChen """ import pandas as pd import numpy as np from sklearn.model_selection import train_test_split import lightgbm as lgb import matplotlib.pyplot as plt import datetime import time from bayes_opt import BayesianOptimization import mlflow import mlflow.lightgbm from mlflow.models.signature import infer_signature # Add at top of script mlflow.set_tracking_uri("http://mlflow-tracking-server:5000") mlflow.set_experiment("Fraud-Detection-LightGBM") class auto_ml: def __init__(self, model): self.project_name = model self.model_name = model + datetime.date.today().strftime("%m%d%Y") self.feature_path = Path(r"/home/cdsw/model/Feature/") self.model_path = Path(r"/home/cdsw/model/Model/") self.label_path = Path(rf"/home/cdsw/model/Label_encoder_dict/") # MLflow initialization self.mlflow_run = mlflow.start_run(run_name=f"{self.model_name}") self.run_id = self.mlflow_run.info.run_id # ... (keep existing distinguish_datatype, feature_to_remove, etc methods) ... @time_monitor def binary_model_train(self, x, y, x_test, y_test, x_val, y_val, categorical_features, best_params): """training for lightgbm with MLflow integration""" with mlflow.start_run(run_id=self.run_id, nested=True): train_data = lgb.Dataset(x, label=y, categorical_feature=categorical_features) test_data = lgb.Dataset(x_test, label=y_test) val_data = lgb.Dataset(x_val, label=y_val) evals_result = {} parameters = { 'application': 'binary', 'boosting': 'gbdt', 'metric': 'auc', 'num_leaves': round(best_params["num_leaves"]), 'feature_fraction': best_params["feature_fraction"], 'bagging_fraction': best_params["bagging_fraction"], 'bagging_freq': round(best_params["bagging_freq"]), 'lambda_l1': best_params["lambda_l1"], 'lambda_l2': best_params["lambda_l2"], 'learning_rate': best_params["learning_rate"], 'min_data_in_leaf': round(best_params["min_data_in_leaf"]), 'max_depth': round(best_params["max_depth"]), 'random_state': 23 } # Log parameters to MLflow mlflow.log_params(parameters) mlflow.set_tag("model_type", "LightGBM") mlflow.set_tag("project", self.project_name) lgb_model = lgb.train( parameters, train_data, valid_sets=[train_data, test_data, val_data], categorical_feature=categorical_features, num_boost_round=3000, early_stopping_rounds=100, evals_result=evals_result, callbacks=[lgb.log_evaluation(period=100)] ) # Log model and metrics signature = infer_signature(x, lgb_model.predict(x)) mlflow.lightgbm.log_model( lgb_model, "model", signature=signature, registered_model_name=f"{self.project_name}_LightGBM" ) # Log feature importance fig, ax = plt.subplots(figsize=(12, 8)) lgb.plot_importance(lgb_model, ax=ax, max_num_features=20, importance_type='split') plt.title("Feature Importance") mlflow.log_figure(fig, "feature_importance.png") plt.close(fig) # Log evaluation metrics for data_name, metrics_dict in evals_result.items(): for metric_name, values in metrics_dict.items(): best_score = values[lgb_model.best_iteration] mlflow.log_metric(f"best_{data_name}_{metric_name}", best_score) return lgb_model def auto_parameter_tuning(self, x, y, x_test, y_test, noi): def find_best_params(dataset): # ... (existing bayesian optimization code) ... return lgbBO.max with mlflow.start_run(run_id=self.run_id, nested=True): train_data = lgb.Dataset(x, label=y, free_raw_data=False) test_data = lgb.Dataset(x_test, label=y_test) best_params = find_best_params(test_data) # Log optimization results mlflow.log_params(best_params["params"]) mlflow.set_tag("tuning_method", "BayesianOptimization") mlflow.log_param("n_iterations", noi) return best_params["params"] def model_evaluation(self, y_test, y_val, pred_y_test, pred_y_val, event): with mlflow.start_run(run_id=self.run_id, nested=True): # ROC Curve fpr, tpr, _ = metrics.roc_curve(y_test, pred_y_test) roc_auc = metrics.auc(fpr, tpr) mlflow.log_metric("test_auc", roc_auc) fig, ax = plt.subplots() ax.plot(fpr, tpr, label=f'Test AUC = {roc_auc:.2f}') ax.plot([0, 1], [0, 1], 'k--') ax.set_xlabel('False Positive Rate') ax.set_ylabel('True Positive Rate') ax.set_title('ROC Curve') ax.legend(loc='lower right') mlflow.log_figure(fig, "roc_curve.png") plt.close(fig) # KS Statistics ks_table_test = self.ks_table(pd.DataFrame(y_test), pred_y_test, event) test_ks = ks_table_test['ks_stats'].max() mlflow.log_metric("test_ks", test_ks) # Confusion Matrix cm = confusion_matrix(y_test, (pred_y_test > 0.5).astype(int)) fig, ax = plt.subplots() disp = ConfusionMatrixDisplay(confusion_matrix=cm) disp.plot(ax=ax) mlflow.log_figure(fig, "confusion_matrix.png") plt.close(fig) # Log tables as artifacts ks_table_test.to_csv("ks_table.csv", index=False) mlflow.log_artifact("ks_table.csv") return ks_table_test, None, None # Modified return to match existing # ... (keep existing other methods with minor adjustments) ...
+
+Key Integration Points:
+
+Experiment Management:
+
+mlflow.set_tracking_uri("http://mlflow-tracking-server:5000") mlflow.set_experiment("Fraud-Detection-LightGBM")
+
+Run Management:
+
+def __init__(self, model): # ... self.mlflow_run = mlflow.start_run(run_name=f"{self.model_name}") self.run_id = self.mlflow_run.info.run_id
+
+Parameter Tracking:
+
+# In binary_model_train: mlflow.log_params(parameters) # In auto_parameter_tuning: mlflow.log_params(best_params["params"])
+
+Model Registry:
+
+mlflow.lightgbm.log_model( lgb_model, "model", signature=signature, registered_model_name=f"{self.project_name}_LightGBM" )
+
+Artifact Logging:
+
+# Feature importance mlflow.log_figure(fig, "feature_importance.png") # ROC Curve mlflow.log_figure(fig, "roc_curve.png") # Confusion Matrix mlflow.log_figure(fig, "confusion_matrix.png") # KS Table mlflow.log_artifact("ks_table.csv")
+
+Metric Tracking:
+
+# Best metrics from training mlflow.log_metric(f"best_{data_name}_{metric_name}", best_score) # Evaluation metrics mlflow.log_metric("test_auc", roc_auc) mlflow.log_metric("test_ks", test_ks)
+
+Nested Runs:
+
+with mlflow.start_run(run_id=self.run_id, nested=True): # Tuning and evaluation blocks
+
+Important Enhancements:
+
+Model Signature:
+
+signature = infer_signature(x, lgb_model.predict(x))
+
+Captures input/output schema for deployment validation
+
+Model Registry:
+
+registered_model_name=f"{self.project_name}_LightGBM"
+
+Enables versioning and stage transitions
+
+Hierarchical Organization:
+
+mlflow.start_run(run_name="main") mlflow.start_run(nested=True) # For tuning mlflow.start_run(nested=True) # For training
+
+Creates logical grouping of related runs
+
+Comprehensive Artifacts:
+
+Feature importance plots
+
+ROC curves
+
+Confusion matrices
+
+KS tables
+
+Parameter sets
+
+To use this integrated solution:
+
+Start MLflow server:
+
+mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./artifacts --host 0.0.0.0
+
+Add environment tracking (create conda.yaml):
+
+name: fraud-detection channels: - conda-forge dependencies: - python=3.8 - lightgbm=3.3.5 - scikit-learn=1.0.2 - mlflow=2.3.1 - pandas=1.4.3 - numpy=1.22.4 - bayesian-optimization=1.4.3
+
+For production deployment:
+
+model_uri = f"runs:/{run_id}/model" mlflow.pyfunc.serve(model_uri=model_uri, port=5001)
+
+This integration provides:
+
+Complete experiment reproducibility
+
+Centralized model management
+
+Performance comparison across runs
+
+Automated artifact storage
+
+Deployment-ready model packaging
+
+Audit trail for model development
+
+Would you like me to elaborate on any specific aspect like hyperparameter tuning tracking, model deployment workflows, or drift detection integration?
+
+2025-05-25 12:26:28
+#withMia 人生想法
+
+基於你剛剛的分析 我找到了問題的根本 根本在於我不care用了什麼論據 只care你能不能接受我的論點 而你能接受我的論點 但主要care我用了什麼論據 怎麼論證 而我這個年紀的人 特別是還有點主見的人 隨著過去成功經驗的累積 我們習慣性地用個人的過往成功經驗來總結歸納 但是站在第三方的角度 對方還不一定能認同我的成功經驗是不是真的成功 也沒辦法感同身受 所以如果用個人案例來講解 對方就比較難接受這個輸出的表達模式 所以要邁過這個階段人生的核心在與 要想童年時候一樣 回歸到童年遇到問題不懂的角度 嘗試搜索別人的解決方案 才結合自己經驗 總結有沒有更好的方法 可能現在做法是對的 也可能是錯的 所以這個階段人生的成長核心之一在於 要回歸到童年時 不知道怎麼解決問題的時候 用不斷學習搜索的方法 再重建學習構建自己的體系 有則改之無則加勉 這樣就可以達到在中年階段 人生的進步
+
+而很多成功的中年人士都是停留在了自己過往的成功經驗的階段 而沒有打碎重組這個過程 所以人生的境界基本就鎖定在中年成功的階段的思維了 所以沒辦法再進化
+
+所以隨著年齡成長 人生進入下坡路 就開始有很強的中年危機感
+
+所以突破中年的思維 和困境 還有行為模式的核心在意 要學會如何打碎重組
+
+所以曾國藩人到四五十的時候 重新調整自己 成為聖人 就是經歷了這個打破重組的過程 而很多成功人士 甚至那些暢銷書籍 都是停留在了中年成功階段 真的走到最後的並不多 而突破中年危機的核心在意向老年人學習 向那些老年成功人學習如何打碎 重組
+
+所以我人生再次進步的核心在於 要刻意的否定自己成功經驗 突破自己的舒適思維 重新歸納總結 嘗試思考能不能用另一種方法去處理成功處理過的問題
+
+這樣才能突破我現在的瓶頸
+
+而不是習慣性的拿自己成功的經驗再復刻
+
+所以我人生接下來的五年到十年 目標應該是換思維 打破重組 嘗試用不同的方式去處理問題 這樣才能在四十歲之前 真的中年危機到來之前 做好準備
+
+所以人生就是訓練機器學習模型
+
+random forest 每一次都要從一個新樹 重新訓練 一次又一次的iteration 而在人生的最後 才能把所有不斷打破重組的tree整合成我們每個人最優的機器學習模型
+
+機器學習訓練的不是數據 是人生
+
+發明隨機森林 gradient boost tree的人 一定是對人生有深刻感悟 才能創造出這個像人生的最優算法
+
+這就是為什麼機器學習發展到這裡就止步不前了！
+
+因為這就是人生的最優解了
+
+而這個世界上大部分人都只是single tree 只是站在自己一棵樹上 覺得自己訓練的就是最優解
+
+所以人生止步不前了 讓進步的訣竅就像機器學習的演化史 從single tree變成random forest
+
+所以人到中年不應該是維持現狀 這是最worse的情況 就是站在自己的樹頂 覺得自己的樹是最好的 而是要學會從樹上下來 重頭學習訓練 學會打破 才能重新站在更高的樹上
+
+一直站在自己的樹上 止步不前的感覺是非常強烈的
+
+因為確實single tree很難再訓練下去了
+
+人生如模型 模型如人生
+
+2025-05-21 15:20:38
+https://www.wbolt.com/generative-ai-projects.html
+
+2025-04-30 08:58:09
+#withMia
+
+亲爱的Mia：
+
+今天站在这里，我想起的不是华丽的誓言，而是那些平凡却闪闪发光的瞬间——
+
+记得我们第一次约会时，你因为脱口秀主持人的调侃而脸红的样子；记得我们去看维港的黄昏，说云朵像火星的飞船和我们那张前往火星的船票；记得你总说我炒的菜酱油多口味重，但每次都吃得干干净净。和你在一起的日子，像坐着巴士穿梭在香港的街道——有时是港岛匆忙的风景，有时是九龙热闹的烟火，有时只是新界家旁边 黄金海岸安安静静的日落。我们也一起走过、看过很多靓丽的风景，在埃及远离人烟的沙漠里感受千年前古罗马大帝聆听圣谕，在清晨尚未日出的佩特拉古城里把影子打在古城上，在土耳其爱琴海边欣赏湛蓝平静的海浪。但无论去哪里，只要你在身边，这段路程就变得特别。
+
+因为和你在一起，让我学会了要放慢脚步，欣赏这样的节奏——不必轰轰烈烈，只要和你一起做饭、听歌、聊那些天马行空的想法，就已经是很好的生活。像山间的溪流，不必着急于奔向大海。生活像坐在巴士上穿行在香港的大街小巷——港岛的高楼、九龙的烟火、新界的山与海，风景流转，但每一程我们都有彼此。是你让我明白，爱是火山爆发般的炽烈，亦是细水长流的共生——它像在火焰中绽放的蓝玫瑰，亦像风雨中静静守护的“大树”。像歌里唱的 “让浪漫作主”。而你是我此生最美的风景。
+
+今天我们选择站在这里，不是因为天真地相信永恒，而是决定用每一天去践行那个“火星船票”的约定——即使未来如索拉里斯星般混沌，我也要和你一起好奇、争吵、成长，在每一个平凡的时刻里，种下属于我们的永恒。
+
+我不擅长承诺永远，但我想和你一起试试看——只要我们还能像现在这样，你吐槽我，我逗笑你，每天下班回家一起躺平，一起面对，就够了。
+
+谢谢你选择我，信任我，陪我走到今天。
+
+2025-03-27 17:00:32
+# -*- coding: utf-8 -*-
+
+"""
+
+Created on Thu Apr 18 10:18:28 2024
+
+@author: RoryGChen
+
+"""
+
+import pandas as pd
+
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+
+#from imblearn.over_sampling import RandomOverSampler
+
+import lightgbm as lgb
+
+import seaborn as sns
+
+import os
+
+import glob
+
+from pathlib import Path
+
+import re
+
+from sklearn import preprocessing
+
+from sklearn.metrics import confusion_matrix
+
+from sklearn.metrics import ConfusionMatrixDisplay
+
+import matplotlib.pyplot as plt
+
+import shap
+
+import datetime
+
+import time
+
+import csv
+
+from bayes_opt import BayesianOptimization
+
+from tqdm import tqdm
+
+from sklearn import metrics
+
+import lightgbm as lgb
+
+#parameter entry
+
+class model_prediction_refreshment:
+
+def init(self, output_path, job_path, base_data, feat_path, label_path):
+
+# Create directories if they do not exist
+
+os.makedirs(output_path, exist_ok=True)
+
+self.job_path = Path(job_path)
+
+self.feat_job_path = Path(feat_path)
+
+self.base_data_path = base_data
+
+self.label_path = label_path
+
+
+def read_latest_dataset(self, prefix):
+
+# Get list of all csv files in current directory
+
+files = glob.glob(f"{self.base_data_path}/{prefix}_*.csv")
+
+# Iterate over all files
+
+max_date = 0
+
+for file in files:
+
+# Extract number from file name using regex
+
+match = re.search(f'{prefix}_(\\d+)', file)
+
+if match:
+
+date_str = int(match.group(1))
+
+if date_str > max_date:
+
+max_date = date_str
+
+else:
+
+pass
+
+data = pd.read_csv(f"{self.base_data_path}/{prefix}_{max_date}.csv")
+
+data.columns = data.columns.str.lower()
+
+return data
+
+def read_model_features(self, model_name):
+
+# Get list of all csv files in current directory
+
+files = glob.glob(f"{self.feat_job_path}/{model_name}*_feature.txt")
+
+# Initialize max_date
+
+max_date = 0
+
+# Iterate over all files
+
+for file in files:
+
+# Extract date from file name using regex
+
+match = re.search(rf'{model_name}(\d+)_feature.txt', file)
+
+if match:
+
+date_str = int(match.group(1))
+
+# Update max_date if the current date is greater
+
+if date_str > max_date:
+
+max_date = date_str
+
+else:
+
+pass
+
+max_date = str(max_date).zfill(8)
+
+model_feature_file = rf"{self.feat_job_path}/{model_name}{max_date}_feature.txt"
+
+features = pd.read_csv(model_feature_file)["Features"]
+
+return features
+
+def read_label_encoding(self, data, model_feature, model_name):
+
+# load dataset
+
+categorical_features = data[model_feature].select_dtypes(include=[np.object]).columns.to_list()
+
+# Get list of all csv files in current directory
+
+import joblib
+
+encoder_file = rf"{self.label_path}/{model_name}/label_encoder_dict.joblib"
+
+le = joblib.load(encoder_file)
+
+for i in categorical_features:
+
+data[i] = data[i].astype(str).replace('\.0', '', regex=True)
+
+data[i] = le.fit_transform(data[i])
+
+return data[model_feature]
+
+def read_model_file(self, model_name):
+
+# Get list of all csv files in current directory
+
+files = glob.glob(f"{self.job_path}/{model_name}*.txt")
+
+# Iterate over all files
+
+dates = []
+
+for file in files:
+
+# Extract date from file name using regex
+
+match = re.search(rf'{model_name}(\d+).txt', file)
+
+if match:
+
+date_str = int(match.group(1))
+
+dates.append(date_str)
+
+max_date = max(dates)
+
+if len(str(max_date)) < 8:
+
+max_date = str(max_date).zfill(8)
+
+lgb_model = lgb.Booster(model_file = rf"{self.job_path}/{model_name}{max_date}.txt")
+
+return lgb_model
+
+def prediction(self, lgb_model, data):
+
+pred = lgb_model.predict(data, verbose=23)
+
+return pred
+
+
+def map_score_to_table(self, con_tb, output, model_name):
+
+con_output = pd.concat([con_tb, pd.Series(output, name=f"{model_name}_score")], axis=1)
+
+con_output.columns = con_output.columns.str.lower()
+
+return con_output
+
+
+
+2025-03-27 16:58:56
+# -*- coding: utf-8 -*-
+
+"""
+
+Created on Fri Oct 27 16:23:06 2023
+
+@author: RoryGChen
+
+"""
+
+import pandas as pd
+
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+
+#from imblearn.over_sampling import RandomOverSampler
+
+import lightgbm as lgb
+
+import seaborn as sns
+
+import os
+
+from pathlib import Path
+
+import re
+
+from sklearn import preprocessing
+
+from sklearn.metrics import confusion_matrix
+
+from sklearn.metrics import ConfusionMatrixDisplay
+
+import matplotlib.pyplot as plt
+
+import shap
+
+import datetime
+
+import time
+
+import csv
+
+from bayes_opt import BayesianOptimization
+
+from tqdm import tqdm
+
+from sklearn import metrics
+
+#os.environ["PATH"] += os.pathsep + 'C:/Anaconda3/Lib/Graphviz/bin/'
+
+#parameter entry
+
+class auto_ml:
+
+def init(self, model):
+
+self.project_name = model
+
+self.model_name = model + datetime.date.today().strftime("%m%d%Y")
+
+self.feature_path = Path(r"/home/cdsw/model/Feature/")
+
+self.model_path = Path(r"/home/cdsw/model/Model/")
+
+self.label_path = Path(rf"/home/cdsw/model/Label_encoder_dict/")
+
+# Create directories if they do not exist
+
+# os.makedirs(path, exist_ok=True)
+
+
+def time_monitor(func):
+
+def wrapper(*args, **kwargs):
+
+start_time = time.time()
+
+result = func(*args, **kwargs)
+
+end_time = time.time()
+
+print(f"Execution time of {func.__name__}: {end_time - start_time} seconds")
+
+return result
+
+return wrapper
+
+
+def distinguish_datatype(self, data):
+
+###define data type##
+
+for key in data.columns:
+
+data[key] = data[key].fillna(0)
+
+data[key] = data[key].apply(lambda x: 0 if isinstance(x, str) and '1e-' in x else x)
+
+# Separate columns with nulls and categorize them
+
+categorical_features = data.select_dtypes(include=[np.object]).columns.to_list()
+
+numeric_features = data.select_dtypes(include=[np.float64, np.int64, np.float32, np.int32]).columns.to_list()
+
+total_feature = categorical_features + numeric_features
+
+data = data[total_feature]
+
+###define cat features as string or numeric
+
+for key in categorical_features:
+
+data[key] = pd.Categorical(data[key])
+
+for key in numeric_features:
+
+data[key] = data[key].astype(float)
+
+return data, categorical_features
+
+
+def binary_model_train(self, x, y, x_test, y_test, x_val, y_val, categorical_features, best_params):
+
+"""training for lightgbm"""
+
+train_data = lgb.Dataset(x, label=y, categorical_feature=categorical_features)
+
+test_data = lgb.Dataset(x_test, label=y_test)
+
+val_data = lgb.Dataset(x_val, label=y_val)
+
+
+evals_result = {}
+
+parameters = {'application': 'binary',
+
+'boosting': 'gbdt',
+
+'metric': 'auc',
+
+'is_unbalance': 'False',
+
+'num_leaves': round(best_params["num_leaves"]),
+
+'feature_fraction': best_params["feature_fraction"],
+
+'bagging_fraction': best_params["bagging_fraction"],
+
+'bagging_freq': round(best_params["bagging_freq"]),
+
+'lambda_l1': best_params["lambda_l1"],
+
+'lambda_l2': best_params["lambda_l2"],
+
+'learning_rate': best_params["learning_rate"],
+
+'min_data_in_leaf': round(best_params["min_data_in_leaf"]),
+
+'verbose': -1,
+
+'max_depth': round(best_params["max_depth"]),
+
+'randon_state': 23}
+
+
+lgb_model = lgb.train(parameters,\
+
+train_data,\
+
+valid_sets=(train_data, test_data, val_data),\
+
+categorical_feature=categorical_features,\
+
+num_boost_round=3000,\
+
+early_stopping_rounds=100,\
+
+evals_result=evals_result)
+
+lgb_model.save_model(self.model_path/f'{self.model_name}.txt', num_iteration=lgb_model.best_iteration)
+
+lgb.plot_importance(lgb_model, max_num_features=20, importance_type='split')
+
+print("Please kindly check significant features")
+
+return lgb_model
+
+
+def model_save(self, lgb_model):
+
+lgb_model.save_model(self.model_path/f'{self.model_name}.txt', num_iteration=lgb_model.best_iteration)
+
+
+def load_model(self, path):
+
+lgb_model = lgb.Booster(model_file=path)
+
+return lgb_model
+
+
+def feature_selection(self, lgb_model, threshold):
+
+a = pd.DataFrame(lgb_model.feature_name(), columns = ['Features'])
+
+b = pd.DataFrame(lgb_model.feature_importance(), columns = ['Importance'])
+
+feature_importance = pd.concat([a,b], axis = 1)
+
+Threshold = threshold
+
+feature_select = feature_importance.loc[[x for x in feature_importance.index
+
+if feature_importance.loc[x].Importance > Threshold
+
+]].sort_values(by="Importance",ascending = False)
+
+feature_select.to_csv(self.feature_path/f'{self.model_name}_feature.txt')
+
+return feature_select
+
+
+def oversampling(self, x, y):
+
+###define oversampling strategy
+
+from imblearn.over_sampling import RandomOverSampler
+
+oversample = RandomOverSampler(sampling_strategy='minority', random_state=23)
+
+"""use a small dataset to train for time saving"""
+
+x_train, y_train = oversample.fit_resample(x, y)
+
+return x_train, y_train
+
+
+def label_encoding(self, data, categorical_features):
+
+import joblib
+
+def dict_to_csv(dict_obj, filename, path):
+
+# Create a Pandas Excel writer using XlsxWriter as the engine
+
+writer = pd.ExcelWriter(path/filename, engine='xlsxwriter')
+
+# Write each dictionary item to a different sheet
+
+directory = os.path.dirname(path/filename)
+
+if not os.path.exists(directory):
+
+# If not, create the directory
+
+os.makedirs(directory)
+
+for key in dict_obj:
+
+df = pd.DataFrame(dict_obj[key])
+
+df.to_excel(writer, sheet_name=key, index=False)
+
+# Close the Pandas Excel writer and output the Excel file
+
+writer.close()
+
+le = preprocessing.LabelEncoder()
+
+df_dict={}
+
+for i in categorical_features:
+
+data[i] = data[i].astype(str).replace('\.0', '', regex=True)
+
+ori = data[[i]]
+
+le.fit(data[i])
+
+data[i] = le.transform(data[i])
+
+tran = data[[i]]
+
+df_dict[i] = pd.concat([ori, tran], axis = 1).drop_duplicates()
+
+dict_to_csv(df_dict, 'encoded_label_dict.csv', self.label_path / self.project_name)
+
+joblib.dump(le, self.label_path / self.project_name / 'label_encoder_dict.joblib')
+
+return data, df_dict
+
+
+def read_label_encoding(self, data, categorical_features):
+
+import joblib
+
+le = joblib.load(self.label_path / self.project_name / 'label_encoder_dict.joblib')
+
+for i in categorical_features:
+
+data[i] = data[i].astype(str).replace('\.0', '', regex=True)
+
+data[i] = le.fit_transform(data[i])
+
+return data
+
+
+def auto_parameter_tuning(self, x, y, x_test, y_test, noi):
+
+def find_best_params(dataset):
+
+def lgb_eval(num_leaves, feature_fraction, bagging_fraction, bagging_freq,\
+
+max_depth, lambda_l1, lambda_l2, learning_rate, min_data_in_leaf):
+
+
+params = {'application': 'binary',
+
+'boosting': 'gbdt',
+
+'metric': 'auc',
+
+'is_unbalance': 'False',
+
+'num_leaves': np.int(np.round(num_leaves)),
+
+'feature_fraction': feature_fraction,
+
+'bagging_fraction': bagging_fraction,
+
+'bagging_freq': np.int(np.round(bagging_freq)),
+
+'lambda_l1': lambda_l1,
+
+'lambda_l2': lambda_l2,
+
+'learning_rate': learning_rate,
+
+'min_data_in_leaf': np.int(np.round(min_data_in_leaf)),
+
+'verbose': -1,
+
+'feature_pre_filter': 'False',
+
+'max_depth': np.int(np.round(max_depth))}
+
+
+adjust_result = list()
+
+cv_result = lgb.cv(params, dataset, nfold=10, seed=1, stratified=True,
+
+metrics = ['auc'], verbose_eval=False)
+
+
+for i in range(len(cv_result['auc-mean'])):
+
+adjust_result.append(cv_result['auc-mean'][i]-cv_result['auc-stdv'][i])
+
+
+return cv_result['auc-mean'][-1]-cv_result['auc-stdv'][-1]
+
+
+lgbBO = BayesianOptimization(
+
+lgb_eval,{
+
+'num_leaves': (50, 1000),
+
+'feature_fraction': (0.3, 0.9),
+
+'bagging_fraction': (0.3, 0.9),
+
+'bagging_freq': (5, 100),
+
+'max_depth': (3, 20),
+
+'lambda_l1': (0.3, 10),
+
+'lambda_l2': (0.3, 10),
+
+'min_data_in_leaf': (20, 2000),
+
+'learning_rate': (0.005, 0.1),
+
+}, random_state=23)
+
+
+# lgbBO.subscribe(Events.OPTMIZATION_STEP, logger)
+
+lgbBO.maximize(init_points=5, n_iter=noi)
+
+return lgbBO.max
+
+train_data = lgb.Dataset(x, label=y, free_raw_data=False)
+
+test_data = lgb.Dataset(x_test, label=y_test)
+
+best_params = find_best_params(test_data)
+
+return best_params["params"]
+
+
+
+def tree_graph(self, lgb_model):
+
+from IPython.display import HTML
+
+lgb.create_tree_digraph(lgb_model, tree_index=8, show_info=["leaf_count", "split_gain"])
+
+
+def feature_to_remove(self, list_name, feat_to_remove):
+
+# define the list
+
+a = list_name
+
+# define the items to remove
+
+b = feat_to_remove
+
+# remove the items
+
+c = [item for item in a if item not in b]
+
+return c
+
+
+def feature_label_split(self, data, features_name, label_name):
+
+x = data[features_name]
+
+y = data[label_name]
+
+return x, y
+
+
+def train_test_split(self, x, y, train_test_ratio,train_val_ratio ,your_lucky_number):
+
+###train and test split###
+
+x, x_test, y, y_test = train_test_split(x, y, test_size=train_test_ratio, random_state=your_lucky_number, stratify=y)
+
+x, x_val, y, y_val = train_test_split(x, y, test_size=train_val_ratio, random_state=your_lucky_number, stratify=y)
+
+return x, y, x_test, y_test, x_val, y_val
+
+
+def prediction(self, lgb_model, data):
+
+pred = lgb_model.predict(data, predict_disable_shape_check=True, verbose=0)
+
+return pred
+
+###ROC LIFE GAIN on model results###
+
+def roc_curve(self, y_test, y_val, y_test_pred, y_val_pred):
+
+"""
+
+draw ROC chart
+
+
+chart will plot test and val roc result
+
+"""
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test.reset_index(drop=True), y_test_pred)
+
+fpr2, tpr2, thresholds = metrics.roc_curve(y_val.reset_index(drop=True), y_val_pred)
+
+auc = metrics.auc(fpr, tpr)
+
+auc2 = metrics.auc(fpr2, tpr2)
+
+plt.figure()
+
+lw = 2
+
+plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve test (area = %0.2f)' % auc)
+
+plt.plot(fpr2, tpr2, color='lightblue', lw=lw, label='ROC curve val (area = %0.2f)' % auc2)
+
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+
+plt.xlim([0.0, 1.0])
+
+plt.ylim([0.0, 1.05])
+
+plt.xlabel('False Positive Rate')
+
+plt.ylabel('True Positive Rate')
+
+plt.title('Receiver operating characteristic')
+
+plt.legend(loc="lower right")
+
+plt.show()
+
+
+def ks_table(self, y_test, pred_y_test, event):
+
+"""
+
+draw KS chart
+
+"""
+
+y_test_pred = pd.concat([y_test.reset_index(drop=False), pd.Series(pred_y_test)], axis=1, ignore_index=True)
+
+y_test_pred = y_test_pred.rename(columns = {0: "index", 1: event, 2: "pred"})
+
+y_test_pred["decile"] = pd.qcut(y_test_pred["pred"],10,labels=["1", "2" ,"3",\
+
+"4", "5", "6", "7", "8", "9", "10"])
+
+non_event = "non_" + event
+
+y_test_pred[non_event] = 1 - y_test_pred[event]
+
+df1 = pd.pivot_table(data=y_test_pred, index=['decile'],
+
+values=[event, non_event,'pred'],
+
+aggfunc={event : [np.sum],\
+
+non_event : [np.sum],\
+
+'pred' : [np.min,np.max]}).reset_index()
+
+df1.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df1.columns]
+
+df1 = df1.rename(columns={'pred_amax': 'pred_max', 'pred_amin': 'pred_min',\
+
+event + '_sum': event, non_event + '_sum': non_event})
+
+df1['total'] = df1[event] + df1[non_event]
+
+df2 = df1.sort_values(by='pred_min',ascending=False)
+
+target_feature_rate = event + "_rate"
+
+df2[target_feature_rate] = (df2[event] / df2['total']).apply('{0:.2%}'.format)
+
+travel_sum = df2[event].sum()
+
+no_travel_sum = df2[non_event].sum()
+
+df2['event_%'] = (df2[event]/travel_sum).apply('{0:.2%}'.format)
+
+df2['non_event_%'] = (df2[non_event]/no_travel_sum).apply('{0:.2%}'.format)
+
+
+df2['ks_stats'] = np.round(((df2[event] / df2[event].sum()).cumsum()\
+
+-(df2[non_event] / df2[non_event].sum()).cumsum()), 4) * 100
+
+flag = lambda x: '*****' if x == df2['ks_stats'].max() else ''
+
+df2['max_ks'] = df2['ks_stats'].apply(flag)
+
+return df2
+
+def gain_chart(self, ks_test, ks_val, event):
+
+"""
+
+draw Gain chart
+
+"""
+
+#cal test event cum
+
+df_gain = ks_test.copy()
+
+event_cum = event + '_cum%'
+
+df_gain[event_cum] = np.round(((df_gain[event] / df_gain[event].sum()).cumsum()), 4) * 100
+
+df_gain = df_gain[[event_cum]]
+
+df_gain.reset_index()
+
+df_gain.columns = ['event_cum%_test']
+
+
+#cal val event cum
+
+df_gain2 = ks_val.copy()
+
+df_gain2[event_cum] = np.round(((df_gain2[event] / df_gain2[event].sum()).cumsum()), 4) * 100
+
+df_gain2 = df_gain2[[event_cum]]
+
+df_gain2.reset_index()
+
+df_gain2.columns = ['event_cum%_val']
+
+df_gain3 = df_gain2.copy()
+
+df_gain3['Base %'] = [10,20,30,40,50,60,70,80,90,100]
+
+
+#plot chart
+
+final = pd.concat([df_gain3,df_gain],axis=1)
+
+gains_chart = final.plot(kind='line',use_index=False)
+
+gains_chart.set_ylabel("Proportion of Event",fontsize=12)
+
+gains_chart.set_xlabel("Decile",fontsize=12)
+
+gains_chart.set_title("Gains Chart")
+
+return final
+
+
+def lift_chart(self, gain_table):
+
+"""
+
+Lift chart
+
+"""
+
+final2 = gain_table.copy()
+
+final2['lift_test'] = (gain_table['event_cum%_test']/gain_table['Base %'])
+
+final2['lift_val'] = (gain_table['event_cum%_val']/gain_table['Base %'])
+
+final2['Baseline'] = [1,1,1,1,1,1,1,1,1,1]
+
+lift_chart = final2[['lift_test', 'lift_val', 'Baseline']]
+
+lift_chart1 = lift_chart.plot(kind='line',use_index=False)
+
+lift_chart1.set_ylabel("lift",fontsize=12)
+
+lift_chart1.set_xlabel("Decile",fontsize=12)
+
+lift_chart1.set_title("Lift Chart")
+
+lift_chart1.set_ylim(0.0,5)
+
+
+def model_evaluation(self, y_test, y_val, pred_y_test, pred_y_val, event):
+
+#ROC chart
+
+self.roc_curve(pd.DataFrame(y_test), pd.DataFrame(y_val), pred_y_test, pred_y_val)
+
+
+#KS table
+
+ks_table_test = self.ks_table(pd.DataFrame(y_test), pred_y_test, event)
+
+ks_table_val = self.ks_table(pd.DataFrame(y_val), pred_y_val, event)
+
+
+#gain chart
+
+gain_table = self.gain_chart(ks_table_test, ks_table_val, event)
+
+
+#lift chart
+
+self.lift_chart(gain_table)
+
+return ks_table_test, ks_table_val, gain_table
+
+
+def generate_yymm_range(self, start, end):
+
+start_year = start // 100
+
+start_month = start % 100
+
+end_year = end // 100
+
+end_month = end % 100
+
+current_year = start_year
+
+current_month = start_month
+
+yymm_range = []
+
+while (current_year < end_year) or (current_year == end_year and current_month <= end_month):
+
+yymm_range.append(current_year * 100 + current_month)
+
+if current_month == 12:
+
+current_month = 1
+
+current_year += 1
+
+else:
+
+current_month += 1
+
+return yymm_range
+
+
+def transform_cust_id(cust_id):
+
+if cust_id[:2] == "18":
+
+return "180" + "0" * 18 + cust_id[-7:]
+
+elif cust_id[:1] == "9":
+
+return "900540" + "0" * 18 + cust_id[-7:]
+
+else:
+
+return cust_id
+
+2024-12-06 10:54:32
+孔子在周朝的太庙里见到一个铜人,背上刻有几行字,说："不要多说话,多说话多受损；不要多管事,多管事多遭灾。"这个训诫说得太妙了!对于动物来说,善于奔跑的就不能让它长上翅膀,善于飞行的就不能让它长出前肢,头上长角的嘴里就没有上齿,后肢发达的前肢就退化,大概大自然的法则就是不能让它们兼有各种优点吧。古人说："干得多而干好的少,那就不如专心干好一件事；鼫鼠有五种本领,却都难以派用场。"近世有两个人,都是聪明颖悟之辈,兴趣广泛,却没有一样专长能帮助他们树立名声。他们的经学知识经不起别人提问,史学知识不足以跟别人探讨评论；他们的文章水准达不到编集传世,书法作品不值得保存赏玩；他们为人卜筮六次里面只对三次,替人看病治十个只能有五个痊愈；他们的音乐水准在数十人之下,射箭本领也不出众,天文、绘画、棋艺、鲜卑话、胡人文字、煎胡桃油、炼锡成银,像这一类的技艺,他们也只能略微了解一个大概,却都不是精通熟悉。可惜啊,以他们这样的精神和灵气,如果能割舍其他爱好,专心研习一种,那一定会达到精妙的地步。
+
+向君主上书陈述意见,这种事起自战国时代,到了两汉,这种风气更加流行。推究它的体度,有四种情况：指责国君长短的,属于谏诤一类；攻讦群臣得失的,属于讼诉一类；陈述国家利害的,属于对策一类；抓住对方私人情感来打动他的,属于游说一类。总括这四类人之道路,都是靠贩卖忠心来求取地位,靠出售言论来谋取利禄。他们陈述的意见可能没有丝毫益处,反而可能会导致不被国君理解的困扰；即使有幸能感悟国君,被及时采纳,当初他们也能得到不可比量的奖赏,但最终还是遭致了无法预测的诛杀,就如同严助、朱买臣、吾丘寿王、主父偃这类人,那是很多的。优秀的史官所记载的,只是选取了其中那些狂狷耿介,评论时政得失的人罢了,但这些都不是世家君子谨守法度的人所能干的。就我们现在所看见的,那些德才兼备的人都耻于干这种事。守候于国君出入的门户,或趋赴朝廷的殿堂,向国君献书言计,那些东西大多是空疏浅薄,自吹自擂的,内中没有治理国家的纲领,都是些鸡毛蒜皮的小事,十条意见里面,无一条值得采纳；纵然其中所言也有合乎实际情况的,但上书者却忘了那是别人早就认识到的,并不是大家不知道,可忧的是知道了却不去实行。有时上书者被人揭发出奸诈营私的事,当面与人应答对证,事情的发展反复变化,当事人这时反而是时时担惊受怕；纵然国君出于对外维护朝廷声誉教化的考虑,或许能对他们加以包涵,那他们也只能算是侥幸获免之辈,正人君子是不值得与他们为伍的。
+
+君子要谨守正道、推崇德行,蓄养声望以待时机。一个人如果官职俸禄不能往上升,那实在是因为天命的缘故。自己去索求奔走,不顾及羞耻,跟别人比较才能大小,计量功劳高低,声色俱厉,怨这怨那,甚至有人以宰相的毛病进行要挟,以此取得酬谢；有人大声吵嚷,混淆视听,以此求得早日被安排任用。靠这些手段得到官职,说这就是他们的才干能力,这与偷盗食物来填饱肚皮,窃取衣服来求得温暖有什么区别呢!一般人看见那些奔走钻营而取得官位的人,就说："不去索取怎么能获得呢?"他们不知道时运到来时,你不求取也会来的；他们看见那些恬静谦让却没有得到赏识的人,就说："不去争取怎么能成功呢?"他们不知道时机没有来到,徒然去追求也是没有好处的。世上那些不去索求却获得了,以及索求了却没有获得的人,哪能计算得清呢!
+
+从前我在修文令曹时,有山东学士与关中太史争论历法,共有十几个人,相互之间乱争了好几年也没有结果,内史下公文交付议官来评定是非。我发表自己的看法说："大抵各位先生所争论的,可分为四分律和减分律两家。历象的要点,是可以用日晷仪的影子来测量的。现在以此来检验两种历法的春分、秋分、夏至、冬至四个节气以及日食月食等现象,可以看出四分律比较疏略而减分律比较细密。疏略者就声称政令有宽大与严厉之别,天体的运行也相应会产生超前与不足,这并不是历法计算的失误；细密者则说日月的运行虽然有快有慢,但用正确的方法来推求,就可以预先知道它们运行的躔度,并不存在什么灾祥之说。如果采用疏略的四分律,就可能隐藏奸邪而失却真实,如果采用细密的减分律,就可能顺应天数而违背经义。况且议官所懂得的知识,不可能精于论争的双方,以学识浅薄的人去裁判学问深厚的人,哪里能让人服气呢?既然这事不属于法律条令所掌管,就希望不要让我们来判决此事吧。"整个议曹的人不分地位高低,都认为我说得对。有一位礼官,却以表现这种谦让态度感到耻辱,苦苦地舍不得放手,想方设法去对两种历法进行考核。他的有关知识修养又不足,无法实地进行测量,就反反复复地去采访论争的双方,想借此看出其中的优劣。他们从早到晚地聚会评议,暑往寒来,不胜烦劳,由春至冬,竟然无法裁决,抱怨责难之声四起,这位礼官才红着脸告退了,最后还被内史搞得下不了台,这就是好名声出风头所招来的耻辱啊!
+
+2024-09-11 08:20:15
+#withMia 24.09.11
+
+巴士行
+
+很喜欢坐巴士穿行在香港的街道 不同区又有不同的景色 港岛看的是高楼林立 有时又好像爱丽丝梦游仙境一样 闯入不同人的世界 新界则是风景巨多 九龙看得则是众生
+
+2024-04-12 07:20:04
+#withMia
+
+4.12.24
+
+广告牌上的腐蚀图案很好看 这也是大自然的鬼斧神工之一吧
+
+2024-01-18 08:28:24
+#一些想法
+
+研究一下中产与基层的利益是否冲突 那些努力置身事外的中产 如果基层或者失业的人口过高 最终还是会影响中产的利益
+
+2023-11-06 07:36:04
+#withMia
+
+11.6
+
+剛剛突然想到 應該寫篇文章叫做焦慮的年代 比如因為iPhone的電池百分比而產生的電量焦慮 因為各種社交軟件而產生的容貌焦慮 app向我們輸出的價值模式和生活模式 焦慮成為了科技發展的副作用 而由社交軟件科技導致產生的焦慮 是否只能通過斷離科技來緩解？能否有一套一以貫之的方法
+
+2023-09-28 07:14:21
+#withMia
+
+9.28
+
+關於去sz看vr金字塔展，我並不是沒興趣，只是一想到深圳的人山人海，就覺得無論什麼都變得有點索然無味。我記得展覽會一直持續到明年一月，既然時間這麼長，也沒有必要去搶頭彩。
+
+2023-08-12 06:54:14
+#withMia
+
+8.12
+
+回家了一周 今天又回广东了 东北的天总是灰蒙蒙的 周六清晨的空气中还弥漫着一股烧烤过后的二氧化物的味道 仿佛昨夜的城市派对刚刚结束
+
+2023-07-30 13:55:47
+#withMia
+
+7.30
+
+我一直在思索你說我有時沒有耐心的問題 我覺得可以設置一個機制 每次你說完了 要問我你覺得呢 這是我在說我的觀點 應該就可以一定程度解決問題了吧
+
+2023-07-25 07:12:50
+#withMia
+
+7.25
+
+下班做飯等你回家的感覺太棒了～ 給你做了魚湯 煮了米線 買了海南雞
+
+門口有水果可以吃
+出門把大門帶上關上就行 其他出門電梯都不需要門卡啥的 別落東西了 檢查一下再出門 證件啥的
+大門貓貓處的牆上面應該有一把黑色鑰匙 是開我家房門的 今晚給妳弄一下指紋 免得你落下東西進不去 你把鑰匙拿著～ 不怕丟沒事
+2023-07-24 08:13:02
+#withMia
+
+7.24
+
+我觉得我们在一起让我觉得很与众不同的一点 我们可以很自然的向彼此表达爱意～ 我觉得好幸福呀 这就是我想要的生活和关系🥹
+
+2023-07-22 08:29:21
+#withMia
+
+7.21
+
+我们第七次约会 这次我们在一起四天呀～ 我们可以像正常的男女朋友一样 一起上下班 一起吃午饭晚饭 一起去听live house 每首昨夜派对的歌都好好听！我好喜欢从办公室里冲出来抱我 让我觉得这个世界无尽美丽的事物都与你有关 我们一起听了好多歌曲 我想了很多事情 有的不记得了 有的讲给了你 两个人能在一起真的好幸福！我好好好好好好好好好好喜欢你 不管你有多喜欢我 我都会比你多一点点 哈哈哈哈哈哈哈哈哈 有你在身边真好呀
+
+我终于也戴上了牙套 你有看到我带牙套前的样子 好开心～ 我觉得这辈子 下辈子 还有无论个轮回 我都想和你在一起 我们一起去看美好的事物 去旅行 去看黄昏日落 去看你眼中的云 享受着只有彼此的世界～
+
+我想到你之前的一些担忧 但不知道为什么我一点也担心不起来 因为我觉得 我们都看过爱情里的狼狈与不堪 我们都很珍惜彼此 也知道该如何才能走得更长远 我不是觉得我们与其他人有什么不同 但假如我们不能走到最后 那还有谁能呢～
+
+2023-07-20 07:21:54
+#withMia
+
+7.19
+
+身體被幸福感充滿的感覺真好 感覺每個縫隙裡都滿是幸福感
+
+
+2023-07-19 07:25:09
+#withMia
+
+7.18
+
+我們終於聊到了我最害怕的話題 但我還是願意和你坦承地承認自己談過三次戀愛 晚上又聊到很晚 你知道最令我痛苦 甚至要痛暈過去的是 不論我的過去如何 我對你的感情沒有任何變化 但卻要忍受承受告訴你而對你可能帶來的改變 讓我覺得夢魘似乎成真… 第二天早晨起身 整個人彷彿都被掏空了
+
+2023-07-18 07:23:07
+#withMia
+
+7.17
+
+感覺和你在一起時間很漫長 內心的每一個縫隙都被你填滿了
+
+以前和人交往 我總是想得太多的那個人 但和你在一起後 我發現自己變得也不那麼像自己 突然多了好多勇氣 少了很多對不確定性的擔憂 無論是說給你一些內心深處的話 或者像小太陽一樣給你力量鼓勵你～ 我感覺自己越來越像那棵大樹 所以我對我們很有信心！因為我們都在往自己想成為的 更好的自己在努力
+
+2023-07-17 08:51:18
+#withMia
+
+7.16
+
+第六次约会 本来计划的游车河行程 因为炎热的天气 你来了我家～ 我们的距离又近了一步 这次我们终于可以听见彼此的心跳了～把你抱在怀里的感觉太好了 感觉可以从天黑聊到天亮
+
+你说之所以会一直努力主动和我聊天 是第一次见面听我说在香港每件事情都太辛苦了 每件事情都要很努力的去争取 所以在你我这件事情上你想让我轻松一点 听你说这句话的时候 我觉得多辛苦都值得了 感觉你的每句话每个小礼物都像天空上漂浮的一条羽毛 随风飘荡 看似轻盈 但落在心间那一刹那却掷地有声 真是我这辈子听过最简单却最直击心灵深处的情话 我觉得认识你一定是把上辈子的运气也花光了 或者可能下辈子的quota也用了吧 倘若真的有前世 如若真的有来生 我希望那个人永远都是你 晚上打电话的时候我忘记说了 你今天的打扮真的好美～ 但无论浓妆淡雅 我觉得你都是最美的 是人群里那个普通当仅仅一眼就让我沉陷且魂牵梦绕的 真希望拥抱那一瞬间即是永恒
+
+2023-07-14 08:54:35
+#withMia
+
+7.14
+
+我們昨晚又聊了三個小時 但我一點也不覺得疲憊 能聽到你的聲音便覺得就好像是苦悶生活裡的一顆糖 一杯溫暖的咖啡 是夏日裡的一杯冰鎮汽水 是冬日裡從爐子裡取出來的烤紅薯 你說你很擔心人的善變 我也很害怕 和你一樣 但我覺得溝通 聆聽是能夠解決這些問題的
+
+和一個人在一起對我而言是一個責任 是一份承諾 是一個很重要的決定 因為看過聽過太多的不完美與不美好 一方面我對自己有信心 相信可以handle好很多問題了 另外一方面呢 我太喜歡你啦 太想和你嘗試一下 盡然兩人的事情會有很多不確定性 但我覺得能和你在一起就值得了 所以我沒那麼恐懼結局和生活裡的不確定性了 如若真的發生 我也能夠坦然地接受一些現實的困難 因為你我才有了這樣的勇氣 所以不光是我 我覺得你也要對我們有信心 我會一直給你做好吃的～
+
+這段想說好幾次了～ 我想起來日落三部曲裡女主和男主說剛在一起時的感受 她說有一刻她希望她們能像龐貝古城裡相擁在一起被埋在火山灰下的情侶 時間對他們而言是靜止的 靜止在愛情裡最美好的那一刻 我以前看的時候不太get到這句話的感受 又覺得想到後面似乎有一些難過 但現在我可以強烈地感受到女主當時的感受了
+
+2023-07-11 02:10:56
+#withMia
+
+7.11
+
+给你唱了莫文蔚的慢慢喜欢你 你说最后一句话和你喜欢的一句话很像“最惊喜是，不期而遇，然后，喜出望外。” 我又何尝不是呢~
+
+我努力解釋了很久 原來一首歌詞就很容易的解釋了。。。 哈哈哈哈 我的意思就是說 因为太相信你了 因为太喜欢你了 所以我努力的不让自己庸人自扰 只要你愿意 我就会一直在你身边
+
+
+2023-07-09 06:55:48
+#withMia
+
+7.9
+
+第五次约会呀 一起吃了一家韩国料理 冰淇淋好有趣！看了一场电影 原谅我总想偷偷地靠近你 被你靠在我身边的感觉太好了 湖边好浪漫呀 好像把整个城市的画轴展开摆在我们面前 还有阿姨随着音乐在眼前翩翩起舞 听着你一直在那里讲不同的事情 好喜欢这种感觉 我们还有着一样开孤儿园的天真想法 我最近觉得每每想起你的时候 就觉得空气都是甜丝丝的 爱是触碰又缩回的手 我很怕自己这种情绪会灼伤你
+
+你知道我最喜欢和你在一起的感觉就是 我总觉有好多话想和你说 想和你分享 但话到嘴边有时又说不出来 也不是因为什么特别的原因欲言又止 只是单纯的觉得 以后还有好长的时间 可以慢慢说给你听～ 以前觉得感情就应当是炽烈浓密的 不是在积蓄中爆发 就是在等待中死亡 可我现在觉得 感情是山间的小涧溪流 随着天气的阴晴 水流时深时浅 但从不曾间断 静静地滋润着山里的生命 和你在一起体会着细水长流的感觉 听你讲很多事情和想法 以及偶然间观点上的巧合都让我惊喜不断 很喜欢电影一一里一句话 说这个世界上没有一棵树 没有一朵云是不美丽的 所以人也应当这样 我总抱着这样的想法去看待欣赏每个人 但此刻的我只是觉得 或许这世界上的每一棵每一朵云都很美丽 但只有你是那么的与众不同 那么的独一无二 你是让我想要去守护的那棵树 那朵云～ 最近时常觉得 无论森林里有多少树 我应该也能一眼望到你 无论天上有多少朵云 当抬起头的瞬间 你也一定刚好从天上飘过～ 每想到这里 内心就充满了无限的感恩 我好珍惜和你在一起的每一秒
+
+2023-07-05 22:34:11
+#withMia
+
+7.5
+
+我们早晨竟然看了同一篇新闻 怎么会这么巧呢
+
+2023-07-05 22:33:36
+#withMia
+
+7.4
+
+晚上我们一起语音聊了很久 直到接近凌晨一点 我好想你
+
+2023-07-03 07:33:41
+#withMia
+
+7.3
+
+早晨起身的时候 想起昨晚的对话 觉得活力满满 今天的天空也是蓝蓝的
+
+你和我讲起那天去看live的晚上 我们聊天说起我想成为大树的时候 再到后来一起约会 你和我说起你乡下的那颗大树 其实当时我就在想 那个也好像我脑海中的大树 我也想努力成为你的大树 慢慢地两个大树的画面就交叠重合在了一起 这一定是命运吧 或者是那颗大树聆听你太多的故事 于是在人世间安排我出现的 我一定会圆满完成任务🫡
+
+如果我是你的大树 那你一定就是我的天使了
+
+2023-07-02 21:25:11
+#withMia
+
+7.2
+
+這幾天身體實在抱恙 連著幾天都沒有紀錄過什麼 但依然好開心的是每天都有收到你的消息 雖然身體疼痛令人疲憊不堪 但內心還是充滿期待 期待著今天終於又可以見到你了 親手送上禮物給妳 這個禮物真的是我這輩子準備過的最沒用的禮物 哈哈哈哈哈哈 玫瑰花是我親手燒出來的 那個箱子裡真的有三隻小羊 還有修修改改了無數次的信 感覺自己要變成白紙殺手 以及那個讓我心情好似過山車一樣的箱子 看到你喜歡的樣子 感覺一切的辛苦和疼痛都不值得一提
+
+我们的第四次约会～ 帶你去吃了同事推薦的餐廳 看你吃的那麼開心我也好開心呀～ 想把全世界最好吃的食物都喂給妳吃 你說你很喜歡吃堅果 那我以後做飯多給你放一點～ 哈哈哈哈哈哈哈哈
+
+玩ho牌的時候抽到憎惡那裡 其實我的生活裡很少會用到這個詞 相比花精力去憎惡別人或者外在事物 我覺得這個詞更應該用在自己身上 就像我很憎惡自己的怯懦 和你講的這份怯懦也是有原因的 初一在武漢讀書的時候我曾經就是被霸凌的那個對象 後來當回到瀋陽讀初二三的時候 感覺自己能夠被人接納了 接納的感覺真的很好 以至於我更怯於去打破這種被接納的關係 這也是我更憎惡自己的地方 明明我知道他們這樣做是不對的 為什麼我不能更直接的指出來 我無數次在睡夢中夢到那個胖胖男孩子的笑容 童年時的我覺得他那個憨憨的傻笑好像沒什麼特別的 可成年之後的我似乎再也沒能在其他人臉上見到他那樣令人印象深刻的笑容了 圓圓的蘋果肌上有著淡淡的紅色 午後的陽光撒過窗戶照在他坐著的最後一排 他笑起來憨憨的樣子有點讓我想起紅彤彤的蘋果
+
+他家裡條件不好 所以被老師安排坐在最後一排 為了能夠融入男生群體 他曾經也去買過很貴的籃球鞋 但男孩子們依然會嘲笑他買的是山寨假貨 無論是真的還是假的 他很喜歡吃零食 但從來不吝嗇分享給別人 我每每想到這裡就心痛的不能自已 痛恨自己為什麼當時沒能做些什麼 這段經歷甚至讓我往後的人生裡對富人富二代充滿了厭惡 高中有一次跟父親同事聚餐 餐上有個叔叔提到我要好好感謝我父親 如果沒有我父親的努力打拼 怎麼會我的今天 那時年輕氣盛的我直接憤然離席 大半夜騎自行車去了海河邊上一個人發呆了好久 後半夜才踩著單車回了家 上了大學之後 我儘量擺脫父母的幫助 很節省盡量少花他們的錢 試過餓暈在圖書館裡 也試過為了省巴士錢徒步十幾公里回學校 大學四年的時光裡去過港島的次數似乎兩隻手就可以數盡了 三個月可能才會下一次山 十幾年來終於我還算可以驕傲地說今天的很多東西 我真的是靠我自己的雙手爭取來的 但到了這年紀 經過社會的打磨 我才真切地意識到父母的不容易 其實那位叔叔說得對 沒有我父親的努力打拼 怎麼會有今天的我 你看我說吧 童年一件小小的事情 對人的一生會造成多大的影響呢
+
+
+當我聽到你講起你小時候被霸凌的故事 心就痛的更加不能自已 你說你小時候又黑又胖 比現在還要胖 被同學起不同的外號 但你還很樂觀開朗 努力和大家相處 你還安慰我說其實那個年紀的孩子其實也不太懂什麼的 不會對往後的人生造成很大影響 當我聽到這個的時候真的好想把你抱在懷裡 只是我還是沒有這個勇氣 你說讓我好好珍惜你 你看看 怎麼又搶了我的內心台詞捏。。。
+
+你知道嗎 我突然意識到為什麼每每想起你的時候 總是想起你微笑的樣子了 這一刻才猛然意識到 你和那個男孩子的笑容是那樣相似 寫到這裡的時候 淚水已經止不住了 謝謝你分享這個經歷給我 讓我內心堅定了許多
+
+昨晚你看完了信 我們又聊了很久 你說從此以後都會說有一朵喜歡的藍色玫瑰花 我又何嘗不是 我感覺我的心理也裝不下另一隻玫瑰了 我只想守護著你這隻玫瑰最燦爛的笑容～ 我開心 我好喜歡你
+
+2023-06-28 07:53:10
+#withMia
+
+6.28
+
+早晨在看小王子的作者安托万写给妻子的情书 里面有几句写得好好 想分享给你
+
+1.
+
+这座小城市到底是死是活，人们根本搞不太清楚。有许多不值一提的小激情，但都不会持续多久。在咖啡馆露台上，充斥着一个无欲无求的小圈子，脑子里记住的全是钓鱼、打猎或者桌球。还有一些记忆是关于那些不难满足的爱情，相关画面正活生生地坐在他们中间：一群少妇，既客气又乏味。一座永远不会再创造任何东西的城市，它已经停止填充它的博物馆，再也不会添加一幅画作，它不再丰富自己的生活必需品，不慌不忙地慢慢花光它的法国年金、它的生活岁月和它的心。你了解这些幸福的小城市，在那里似乎所有人都在悄悄地一同老去，没有任何新意。似乎所有人都迈着小碎步，共同走向衰老。我还知道别的事情。你还记得吧，在塔格莱街窗外，那座刚刚爆发革命的城市。《批评报》报社的警笛声，国会的炮声，还有其他地方的报警声，有时会制造出一首绝妙的歌曲，给这个巨大的躯体带来生机。当时我们站在阳台上说道：城市病了……1月1日那天夜里，我把你叫醒了，因为市民为了营救伊里戈延发出了同样的声响，让我心绪不宁。我不知道它究竟在对着哪个暴君怒吼，在朝着哪种希望喊叫。我对你说：一次革命！而那时正赶上新年。人们正在欢庆人生中的这场胜利。我当时非常感动，你也一样。我发誓一辈子都要把你紧紧靠在我心头，要和你一起迈进许许多多新年……我想起了那颗凶恶的星星，它在大地的另一端闪烁，长着女巫般的眼睛。你想要再去看它一眼吗？我不想。它用这种方式钉住我们的心。我的小妇人，我的伴侣，我的财富，我对您忠心耿耿。我要带您走遍异国他乡，一起驯服满天星辰。以便在炎热的夜晚，我们能够在露台上感到整片天空的恬淡温柔。
+
+2.工作太多了。我将变得不幸，将会受苦，因为不存在可以给予人类的明确真理。而我如此热爱真理，即便对属于我自己的真理缺少足够的把握，我依然会为了真理而受苦。
+
+3.远离那些正在忍饥挨饿的人，这样做让我无法忍受，我只知道一种与我的良心和平共处的方法，那就是尽可能多地受苦，就是去寻找尽可能多的痛苦。
+
+4.我出发不是为了去死。我出发是为了受苦，从而与我的那些同类们交流。
+
+5.我用世上的一切方法想念您。我为您担心，我为自己担心，我担心星辰的数量，担心夜晚、海洋、革命、战争、遗忘，我宁愿快点死去，也不要找不到您。
+
+2023-06-27 07:25:23
+#withMia
+
+6.27
+
+真的很想你 想和你一起做糯米糍 做遍你想吃的东西 你做肠粉的视频太可爱了 睡前又看了好多遍 有时觉得总想见你的欲望也有点太奢侈过分了 我很珍惜和你在一起的每一刻 昨晚一直在练蔡健雅的让浪漫作主 就是想唱给你听 我想让你知道 我对这段感情没什么过分的奢求 即便未来都是现在这样的状态 或许对我而言也是一种满足 作为一个喜欢把什么事情都看得很透彻 分析的清清楚楚的人 第一次觉得也许感情不必那么有功利性 等待它自然发酵 无论发酵成什么样子 我相信我都可以靠我们的双手努力去塑造出好吃的食物 你什么都不用担心 只要做自己就好 让浪漫作主 以浪漫为主～
+
+2023-06-26 07:19:51
+#withMia
+
+6.26
+
+妙妙 我想了一晚上 終於想到要怎麼把複雜的情緒解釋給你
+
+對蔡健雅歌曲喜愛可能主要因為是好奇心 就像我總想在書裡去找答案 去認知這個世界一樣 蔡的歌就是生活裡教我如何去愛人的一本書 書裡看到了她的故事 也看到了自己的故事 難過不是因為某個人某段經歷 難過是自己明明都很努力了 但結局總是不盡如人意 難道戀愛就沒有公式嗎 而蔡的歌曲就是告訴我 戀愛不是星座性格匹配 它有時像遊樂場生鏽的過山車 有時像晨間的新聞 沒有絕對的標準答案 她教會我怎麼在黑暗中獨處 如何和自己和解 一開始聽她的歌是因為覺得她的歌曲裡可能會有答案 到了這個年紀才明白感情裡沒有什麼標準答案 只有繼續努力 只有保持真心 保持好奇心😄
+
+2023-06-24 08:07:53
+#withMia
+
+6.23
+
+我曾经觉得 离别是一件很痛苦的事情 当两个相互思念的人不能在一起 无法面对面相见 可当我想到在这个世界上的某个地方 某个我知道名字的人 我知道她的故事 她也知道我的故事的人 或许某刻心中亦有着一样羁绊的时候 我便觉得分离不再痛苦 悲伤也不再难过 我呼出的二氧化碳 经过这个星球的光合作用 再转化成为她的氧气 这种共享的喜悦 让我觉得等候不再毫无意义 想象也打破了独处的孤寂 闭上眼回忆起的点点滴滴 就像小王子的玫瑰在心球矗立 天长地久也不仅是爱情的专利 直到人们认清了事物的真谛
+
+2023-06-23 19:33:37
+#withMia
+
+6.22
+
+我們的第三次約會 每次和你在一起約會都很開心 老子在道德經說一生二 二生三 三生萬物 我相信我們也會一直這樣約會下去的 我希望可以一直保持這份初遇的初心與珍惜與你相處下去
+
+和你在一起的時候 這個世界彷彿除了你 再也放不下其他人 所以無論我們做多愚蠢可笑的事情 我都不再覺得尷尬～ 幾次若有若無的肌膚觸碰 都讓我深刻地感受到生活在人世的美好 我們晚上在看維港夜景的時候 我說我看待事物的時候 總會先想起悲傷的一面 可與你肌膚相碰 手指相觸的剎那 內心裡除了喜悅 沒有半點悲傷與難過 這是人世間最美妙最心悸的時刻吧 像在炎熱的夏天 打開一瓶橘子味的蘇打水 氣體噴湧出罐子的聲音 已經驅趕走了所有的炎熱酷暑
+
+當我們玩ho牌的遊戲的時候 我第一次看到了你眼裡的世界 原來是那麼溫暖 有一刻好想輕輕依靠在你肩上 就靜靜地看著你手裡圈出來的世界 我們一起看了火烈鳥 看了維港的雲 看了獨自矗立在海邊的燈柱 原來自己的秘密花園被人看到並且欣賞的那一刻是這麼美好 感覺自己內心裡的每一處柔軟 你都會輕輕地觸碰並且撫過 我好喜歡這張通往火星的飛船票 是我收過最浪漫的禮物 從喜歡的女孩子手裡收到禮物的那一刻 內心真的是太驚喜了 我真的快了高興的跳起來了 也好想把你抱起來 哈哈哈哈 感覺往後的人生裡又多了個期待和意義！這一刻我感受到的是欣喜 是美好 是期待 沒有半點負擔和壓力 這對我而言是個多大的慰藉呢！於是人生也多了份牽絆 而我決心無論以後如何 我都會堅持等待著我們名字一起飛向火星的一天 我好想寫下這個世界最曼妙的句子送給你 可又羞於自己語言的匱乏 但我想即使語言和文字都從這個世界上消失了 也沒有關係 我還有雙手 還有目光 還有天馬行空的想象 打造出屬於我們的秘密花園
+
+
+2023-06-21 19:24:09
+#withMia
+
+6.20
+
+今天分享了索拉里斯星的故事大綱給你 還有昨夜的這首歌 哈哈哈哈 感覺你很感興趣 我們一起去看吧
+
+今天循環了一天昨夜派對的island‘s words 裏面的每一句歌詞都讓我想到了你 但最喜歡的是最後兩句
+
+I'm panicking , my thoughts （are） all odd and rich，Yea baby, it’s all fine.（it's perfect and fine）。
+
+和你聊天太有樂趣了 你會留意到我的細節 我會欣賞你的想像力 我覺得你就像天使一樣 一切都很美好～ 我知道這可能是一開始上頭的一廂情願 哈哈哈 但有時覺得人都到這個年紀了 情感超越了理性 本身已經是一件很浪漫很難得的事情了 我想好好珍惜一分一秒
+
+我有點能理解愛在三部曲最後一部女主說當年兩人初初相遇的時候 她某一瞬間真的希望兩個人就像龐貝古城裡相擁在一起的戀人一樣 時間對於他們而言是永恆靜止的 我想我終於體會到這種感受了
+
+2023-06-20 07:12:39
+#withMia
+
+6.19
+
+今天你在忙公司的事情 晚上能感到你好疲憊 心疼～ 我買好票了 好期待下個月會有兩天一起去聽昨夜派對 這週應該沒機會見到你了 想到這裡不禁有點難過 好想給妳嚐嚐我烘培好的咖啡豆 你今天發了公司辦活動的照片給我 你笑起來好好看～ 即使在那麼多人裡也能一眼望到 好像天使般的微笑
+
+2023-06-19 07:17:33
+#withMia
+
+6.17
+
+我們的第二次約會 一起去開了開丁車 你戴上頭盔的樣子泰酷辣 我腦海飄過一個詞 aka元朗小太妹 哈哈哈哈哈 感覺你無論穿什麼都很好看 一起去聽了溫蒂漫步 我最喜歡那首我想和你一起 喜歡的原因就是歌名 晚上在海邊我們聊了很久 第一次覺得原來看似弱小的軀殼裡竟然可以承載著這麼大的力量 我很佩服你 但更想保護你
+
+2023-06-19 00:09:59
+#withMia
+
+6.18
+
+分享了昨夜派對的歌曲給妳 你說你也很喜歡～ 你繼而分享給了好朋友 但似乎你的朋友聽著覺得很悲傷 果然心境的不同看待事物的結論也會不一樣 我們約定好了一起去看演唱會 我也會幫你一起搶jony j的票 還有第二天要幫你問問bj的門票
+
+ho牌是個蠻有趣的東西 我很想和你一起玩 只是因為想多瞭解一點你 但可能揭開面紗後的人性是你所恐懼的 沒關係呀 我有很多溫暖 可以分享給你～ 睡前分享了悲欣交集那個故事給你
+
+加繆說過 真正的哲學問題只有一個 那就是自殺 換句話講 生活的最高哲學就是如何面對死亡 也就是說 人類必須學會一種「由死觀生」的死亡智慧 因為只有在意識上「先行到死」 才能發現生命中真正最寶貴的東西 假如在離死神一步之遙時才去思考生命 已是為時過晚
+
+2023-06-17 14:30:10
+#withMia
+
+6.16 昨天你去參加弟弟的畢業典禮 我帶父母去看了女排 原來你也這麼喜歡排球 哈哈哈哈 想像不到！晚上聽到了你母親的事情 真的很替你難過
+
+2023-06-16 07:29:49
+#withMia
+
+6.15 今天猶豫了很久 晚上才鼓起勇氣問你有沒有下班 我很擔心關心會變成一種負擔 當然我相信在相識的初期 這還不會是太大的問題 聽說要參加弟弟第二天的畢業典禮 其實我偷偷翻過你pyq裡弟弟的照片 感覺很帥氣很陽光 哈哈哈哈哈 你今天提起了Betty 原來我們有這麼多共同的朋友 是命運嗎 hhhh 或者我們很早就見過 那時候我總在觀塘的海邊徘徊 有沒有與你擦身過呢！早晨聽起你講起做義工的故事 我很喜歡媽媽握著女兒手的那一段描述 看著你的文字 有時覺得恍惚間就像自己的眼睛正跟著你在探索這個世界 我也想成為你的眼睛 與你一起去探索 今天很糾結的打出了那句話 很怕產生羈絆但又要分離 但其實還有後半句話我沒敢說出來 而喜歡一個人最熾烈之處就在於一往無前吧
+
+2023-06-15 21:03:07
+#withMia
+
+6.10 我們第一次的f2f見面 我覺得你好可愛 第一眼就喜歡上你了 這麼說雖然太直接了！連手裡的書都不香了 看脫口秀的時候被cue到了 很窘迫 但或許也沒有其他更好的方法表達自己的心情了 怎麼說呢 感謝主持人 🙇 下午聊了很久 其實我感覺時間過得好快 完全感受不到時間的流動 但一看手錶已經九點多了 我真希望時間能靜止 就這麼一直和你聊下去 你笑起來好可愛呀 hhhhhh
+
+2023-06-15 20:48:30
+#withMia
+
+6.9 今天聊了男權女權和性別分工 我恬不知恥得分享了自己的豆瓣主頁給你 你分享了自己的觀點給我 我覺得能共鳴真的好有趣 很久沒試過能和人每天這麼聊下去 你終於問我週六一起出來了 我開心地快在街上舞蹈了～ 好期待
+
+2023-06-15 20:45:29
+#withMia
+
+6.8 我今天鼓起問你有沒有在sz看過脫口秀 你明白我的意思吧！哈哈哈哈哈哈 說到jimmy那裡 我是真的不知道他的show叫那個名字 我感覺我回得都讓時間靜止了 好像找個地方鑽進去 你原來也喜歡那麼多家庭劇 還有第一次聽說歐皇體質 實名羨慕了！原來你也喜歡看星星呀 我想和你一起去露營 看滿天的繁星
+
+2023-06-15 20:42:19
+#withMia
+
+6.7 今天討論了AI和未來 我真的覺得你是個好有趣的女孩子 你突然提了個什麼女神 我想說你這麼有趣的女孩子才像女神吧 但這種話我是說不出口的 這有點過於上頭了 我和你提了我的小名是父母名字的最後一個字 也說我很想穿越回民國 妳說我可以用元也時報去做報紙的名字 我覺得這個idea太棒了 我感受到你豐富的想像力 對話滿是樂趣 晚上給你聽了我讀的詩 你說我可以去考慮在喜馬拉雅開專欄 我真的曾經考慮過 但感覺自己聲音特色還是不夠欸 但被人欣賞好開心 怎麼辦感覺不上頭不行了
+
+2023-06-15 20:25:27
+#withMia
+
+6.6 分享了最近很喜歡的兩首歌法語給你 你有很認真的在回應 還給我看了你們office的飯堂 還有攀岩 我想說我當時有參與設計呀 雖然我只是一個小螺絲釘 哈哈哈哈哈 我好開心這些真的有給你的工作帶來快樂呀！你還和我討論了劉擎講阿倫特那段文字 我分享了critical thinking的看法 我覺得它是對抗平庸的惡的最好工具 我從來沒遇到過你這樣的女孩子 我們才認識第三天欸 話題就這麼深入了 我好喜歡 感覺和你認識了好久 你說喜歡陳綺貞那首我喜歡上你時的內心活動 我有在認真練喔 哈哈
+
+2023-06-15 20:21:24
+#withMia
+
+6.5 我今天發了道長的一期節目 你竟然給我留言啦～ 我好開心 真的好感動 彷彿就是自己的秘密花園被人發現了 而你原來也喜歡著花園裡一樣的花朵 我中午鼓起了勇氣和你說話 你很快也回應了 thats really made my day！
+
+2023-06-15 20:17:27
+#withMia
+
+6.4 我們第一次互相添加了微信 在這個有點特別的日子 我覺得這天對你和我而言都是有意義的 我看新聞說今年維園變成了商品的陳列展銷會 連拿著鮮花去祭拜的人都會被拉 不禁心中一陣淒涼
