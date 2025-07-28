@@ -29,7 +29,8 @@ try:
     CHROMADB_AVAILABLE = True
 except Exception as e:
     CHROMADB_AVAILABLE = False
-    st.warning(f"ChromaDB not available in this environment. Using in-memory storage. Error: {str(e)}")
+    # Don't show the technical error message immediately - we'll show a user-friendly message later
+    CHROMADB_ERROR = str(e)
 
 # Try to import document processing libraries with fallbacks
 try:
