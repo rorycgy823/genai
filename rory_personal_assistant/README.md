@@ -9,7 +9,7 @@ A sophisticated AI assistant powered by GraphRAG technology, ChromaDB knowledge 
 - **Qwen Max API**: Professional AI responses with comprehensive reasoning
 - **Dark Theme UI**: Modern, professional interface with excellent visibility
 - **Conversation Logging**: All interactions stored for model improvement
-- **OCR Support**: Automatic text extraction from PDF, DOCX, TXT, and MD files
+- **OCR Support**: Enhanced PDF processing with EasyOCR and Tesseract fallback for image-based text
 - **Real-time Analytics**: Query analysis with chunk and entity information
 
 ## 📁 Project Structure
@@ -64,7 +64,11 @@ Professional Response + Analytics
 ### **Document Processing**
 1. Automatically scans directory for documents (PDF, DOCX, TXT, MD)
 2. Extracts text using multiple methods including OCR fallback
-3. Stores documents in ChromaDB with metadata
+3. **OCR Fallback**: When regular PDF text extraction fails, automatically uses:
+   - **EasyOCR**: Advanced OCR with multi-language support (English, Chinese)
+   - **Tesseract**: Backup OCR engine for reliable text recognition
+   - **Image Processing**: Converts PDF pages to images for OCR analysis
+4. Stores documents in ChromaDB with metadata
 
 ### **GraphRAG Enhancement**
 1. Extracts entities (companies, skills, positions, years, industries)

@@ -51,6 +51,20 @@ try:
 except:
     DOCX_AVAILABLE = False
 
+# OCR libraries for enhanced PDF processing
+try:
+    import pytesseract
+    from PIL import Image
+    TESSERACT_AVAILABLE = True
+except:
+    TESSERACT_AVAILABLE = False
+
+try:
+    import easyocr
+    EASYOCR_AVAILABLE = True
+except:
+    EASYOCR_AVAILABLE = False
+
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
@@ -244,11 +258,13 @@ class GraphRAGProcessor:
     def __init__(self):
         self.knowledge_graph = nx.Graph()
         self.entity_patterns = {
-            'companies': r'\b(?:China CITIC Bank|CITIC Bank|AXA|Cigna|Ipsos|City University|Education University)\b',
-            'skills': r'\b(?:Python|R|SQL|Machine Learning|Deep Learning|NLP|Tableau|Power BI|Azure|AWS|AutoML|MLOps)\b',
-            'positions': r'\b(?:AVP|Assistant.*Manager|Data Science Analyst|Research Executive|Manager|Director)\b',
+            'companies': r'(?i)\b(?:China CITIC Bank|CITIC Bank|AXA|Cigna|Ipsos|City University|Education University|CITIC)\b',
+            'skills': r'(?i)\b(?:Python|PySpark|SQL|Machine Learning|Deep Learning|NLP|Tableau|Power BI|Azure|AWS|AutoML|MLOps|Data Science|Analytics|AI|Artificial Intelligence)\b',
+            'positions': r'(?i)\b(?:AVP|Assistant.*Manager|Data Science Analyst|Research Executive|Manager|Director|Analyst)\b',
             'years': r'\b(?:20\d{2})\b',
-            'industries': r'\b(?:Insurance|Banking|Healthcare|Finance|Market Research|Medicare)\b'
+            'industries': r'(?i)\b(?:Insurance|Banking|Healthcare|Finance|Market Research|Medicare|ESG|Green|Environmental)\b',
+            'projects': r'(?i)\b(?:Go-Green|Go Green|ESG|Dashboard|AutoML|Pipeline|Migration|Campaign)\b',
+            'locations': r'(?i)\b(?:Hong Kong|China|Asia)\b'
         }
     
     def extract_entities(self, text: str) -> List[str]:
@@ -283,13 +299,28 @@ class GraphRAGProcessor:
     
     def get_related_entities(self, query: str) -> List[str]:
         """Get entities related to query"""
+        # Extract entities from the query
         query_entities = self.extract_entities(query)
         related = set(query_entities)
         
+        # Add entities found in the query to related set
         for entity in query_entities:
             if entity in self.knowledge_graph:
                 neighbors = list(self.knowledge_graph.neighbors(entity))
                 related.update(neighbors[:5])  # Limit to top 5 neighbors
+        
+        # Also search for partial matches in graph nodes
+        query_lower = query.lower()
+        for node in self.knowledge_graph.nodes():
+            node_value = node.split(':')[-1].lower() if ':' in node else node.lower()
+            # Check if any word in query matches the entity
+            for word in query_lower.split():
+                if len(word) > 2 and word in node_value:
+                    related.add(node)
+                    # Add neighbors of matched entities
+                    neighbors = list(self.knowledge_graph.neighbors(node))
+                    related.update(neighbors[:3])
+                    break
         
         return list(related)
 
@@ -534,7 +565,7 @@ class DocumentProcessor:
         self.chunker = chunker or TextChunker()
     
     def extract_text_from_pdf(self, pdf_path: str) -> str:
-        """Extract text from PDF with available libraries"""
+        """Extract text from PDF with available libraries and OCR fallback"""
         text = ""
         
         # Try PyMuPDF first if available
@@ -569,7 +600,95 @@ class DocumentProcessor:
             except:
                 pass
         
-        return f"Could not extract text from {os.path.basename(pdf_path)} (PDF libraries not available)"
+        # OCR fallback if text extraction failed and OCR libraries available
+        if len(text.strip()) < 100:
+            ocr_text = self._extract_text_with_ocr(pdf_path)
+            if ocr_text and len(ocr_text.strip()) > 100:
+                return ocr_text
+        
+        return f"Could not extract text from {os.path.basename(pdf_path)} (PDF libraries not available or text extraction failed)"
+    
+    def _extract_text_with_ocr(self, pdf_path: str) -> str:
+        """Extract text using OCR as fallback"""
+        try:
+            # Try EasyOCR first (more accurate for complex layouts)
+            if EASYOCR_AVAILABLE:
+                return self._extract_with_easyocr(pdf_path)
+            
+            # Fallback to Tesseract
+            elif TESSERACT_AVAILABLE:
+                return self._extract_with_tesseract(pdf_path)
+            
+        except Exception as e:
+            st.info(f"OCR extraction failed for {os.path.basename(pdf_path)}: {str(e)}")
+        
+        return ""
+    
+    def _extract_with_easyocr(self, pdf_path: str) -> str:
+        """Extract text using EasyOCR"""
+        try:
+            import easyocr
+            import fitz
+            from PIL import Image
+            import io
+            
+            reader = easyocr.Reader(['en', 'ch_sim', 'ch_tra'])  # English and Chinese
+            doc = fitz.open(pdf_path)
+            text = ""
+            
+            for page_num in range(min(5, len(doc))):  # Limit to first 5 pages
+                page = doc[page_num]
+                pix = page.get_pixmap()
+                img_data = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_data))
+                
+                # Convert to RGB if needed
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Extract text
+                results = reader.readtext(img)
+                page_text = " ".join([result[1] for result in results if result[2] > 0.5])  # Confidence > 0.5
+                
+                if page_text.strip():
+                    text += f"Page {page_num + 1}:\n{page_text}\n\n"
+            
+            doc.close()
+            return text
+            
+        except Exception as e:
+            st.info(f"EasyOCR failed: {str(e)}")
+            return ""
+    
+    def _extract_with_tesseract(self, pdf_path: str) -> str:
+        """Extract text using Tesseract OCR"""
+        try:
+            import pytesseract
+            import fitz
+            from PIL import Image
+            import io
+            
+            doc = fitz.open(pdf_path)
+            text = ""
+            
+            for page_num in range(min(5, len(doc))):  # Limit to first 5 pages
+                page = doc[page_num]
+                pix = page.get_pixmap()
+                img_data = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_data))
+                
+                # Extract text with Tesseract
+                page_text = pytesseract.image_to_string(img, lang='eng+chi_sim+chi_tra')
+                
+                if page_text.strip():
+                    text += f"Page {page_num + 1}:\n{page_text}\n\n"
+            
+            doc.close()
+            return text
+            
+        except Exception as e:
+            st.info(f"Tesseract OCR failed: {str(e)}")
+            return ""
     
     def extract_text_from_docx(self, docx_path: str) -> str:
         """Extract text from DOCX file if library available"""
@@ -664,7 +783,25 @@ def initialize_system(chunk_size=1000, overlap=200, min_chunk_size=100):
         # Check if knowledge base needs to be populated
         doc_count = chroma_db.get_collection_count()
         
-        if doc_count == 0:
+        # Always try to process documents from current directory first
+        documents_loaded = False
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            documents, metadatas, ids = doc_processor.process_directory(current_dir)
+            
+            if documents:
+                # Add to ChromaDB
+                success = chroma_db.add_documents(documents, metadatas, ids)
+                if success:
+                    # Build GraphRAG
+                    graph_rag.build_graph_from_documents(documents, metadatas)
+                    st.success(f"✅ Loaded {len(documents)} documents from directory!")
+                    
+        except Exception as e:
+            st.warning(f"Could not process directory documents: {str(e)}")
+        
+        # Only add default documents if no real documents were loaded
+        if not documents_loaded and doc_count == 0:
             # Add some default knowledge about Rory
             default_documents = [
                 """Rory Chen - Professional Summary
@@ -719,6 +856,10 @@ def initialize_system(chunk_size=1000, overlap=200, min_chunk_size=100):
                         # Build GraphRAG
                         graph_rag.build_graph_from_documents(documents, metadatas)
                         st.success(f"✅ Loaded additional {len(documents)} documents from directory!")
+                        
+                        # Show what documents were loaded
+                        doc_sources = list(set([meta.get('source', 'Unknown') for meta in metadatas]))
+                        st.info(f"📄 Documents loaded: {', '.join(doc_sources)}")
             except Exception as e:
                 st.info(f"Could not process additional documents: {str(e)}")
         else:
