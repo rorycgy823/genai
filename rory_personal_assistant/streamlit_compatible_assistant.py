@@ -567,7 +567,7 @@ def initialize_system():
                 """Rory Chen - Key Achievements
                 Developed 20+ ML models achieving 1.5x business uplift vs control groups
                 Created AutoML pipeline reducing coding effort by 80%
-                Designed AI+BI framework with ONE AXA Dashboard (100+ monthly users)
+                Designed AI+BI framework with ONE AXA Dashboard 
                 Led cloud migration from on-premise to Azure infrastructure
                 Cross-industry expertise demonstrates adaptability and broad business acumen"""
             ]
