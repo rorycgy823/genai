@@ -361,6 +361,9 @@ CAREER PROGRESSION REASONING:
 - Progressive technical leadership from individual contributor to AVP level
 - Cross-industry expertise demonstrates adaptability and broad business acumen
 
+Please be aware:
+- The ONE AXA Dashboard does not use AI. But i tried to incorporate both AI models with BI insights in my role in China Citic.
+
 Provide professional, accurate responses based on the context and demonstrate reasoning."""
 
         # Add GraphRAG context if available
