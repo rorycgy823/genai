@@ -1,0 +1,32 @@
+# Simple GraphRAG AI Assistant Requirements
+# ========================================
+
+# Core Streamlit
+streamlit>=1.28.0
+
+# ChromaDB for knowledge base
+chromadb>=0.4.15
+
+# Document processing
+PyPDF2>=3.0.1
+PyMuPDF>=1.23.0
+python-docx>=0.8.11
+
+# Graph processing
+networkx>=3.1
+
+# HTTP requests for API calls
+requests>=2.31.0
+
+# Text processing (optional, for enhanced embeddings)
+sentence-transformers>=2.2.2
+
+# Standard libraries (usually included with Python)
+# - os
+# - json
+# - re
+# - glob
+# - uuid
+# - datetime
+# - typing
+# - collections
