@@ -1,0 +1,15 @@
+# Streamlit Cloud Compatible Requirements
+# Pure Python implementation with minimal dependencies
+
+streamlit>=1.28.0
+requests>=2.31.0
+numpy>=1.24.0
+networkx>=3.1
+python-docx>=0.8.11
+PyPDF2>=3.0.1
+
+# Optional: Better embeddings (fallback available if not installed)
+sentence-transformers>=2.2.2
+
+# Note: This version does NOT require ChromaDB
+# Uses pure Python vector storage for full Streamlit Cloud compatibility
