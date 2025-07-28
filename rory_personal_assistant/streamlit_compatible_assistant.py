@@ -352,7 +352,8 @@ TECHNICAL EXPERTISE:
 KEY ACHIEVEMENTS:
 - Developed 20+ ML models achieving 1.5x business uplift vs control groups
 - Created AutoML pipeline reducing coding effort by 80%
-- Designed AI+BI framework with ONE AXA Dashboard
+- Designed AI+BI framework when develop models in China Citic Bank Int'l
+- Created ONE AXA Dashboard which consolidated all LoBs customer and product data into a single dasboard 
 - Led cloud migration from on-premise to Azure infrastructure
 
 CAREER PROGRESSION REASONING:
@@ -360,9 +361,6 @@ CAREER PROGRESSION REASONING:
 - Client relationships at Ipsos likely included insurance/banking companies, facilitating career transitions
 - Progressive technical leadership from individual contributor to AVP level
 - Cross-industry expertise demonstrates adaptability and broad business acumen
-
-Please be aware:
-- The ONE AXA Dashboard does not use AI. But i tried to incorporate both AI models with BI insights in my role in China Citic.
 
 Provide professional, accurate responses based on the context and demonstrate reasoning."""
 
@@ -414,8 +412,126 @@ Please provide a comprehensive, professional response."""
         except Exception as e:
             return "❌ Qwen API failed. Please contact Rory at chengy823@gmail.com"
 
+class TextChunker:
+    """Advanced text chunking with configurable parameters"""
+    
+    def __init__(self, chunk_size: int = 1000, overlap: int = 200, min_chunk_size: int = 100):
+        self.chunk_size = chunk_size
+        self.overlap = overlap
+        self.min_chunk_size = min_chunk_size
+    
+    def chunk_text(self, text: str, source: str = "unknown") -> List[tuple]:
+        """
+        Split text into overlapping chunks with metadata
+        Returns: List of (chunk_text, metadata) tuples
+        """
+        if len(text) <= self.chunk_size:
+            return [(text, {"source": source, "chunk_index": 0, "total_chunks": 1})]
+        
+        chunks = []
+        start = 0
+        chunk_index = 0
+        
+        # Split by sentences first to avoid breaking mid-sentence
+        sentences = self._split_into_sentences(text)
+        current_chunk = ""
+        
+        for sentence in sentences:
+            # If adding this sentence would exceed chunk size
+            if len(current_chunk) + len(sentence) > self.chunk_size and current_chunk:
+                # Save current chunk if it meets minimum size
+                if len(current_chunk.strip()) >= self.min_chunk_size:
+                    chunks.append((
+                        current_chunk.strip(),
+                        {
+                            "source": source,
+                            "chunk_index": chunk_index,
+                            "chunk_size": len(current_chunk.strip()),
+                            "start_pos": start,
+                            "end_pos": start + len(current_chunk)
+                        }
+                    ))
+                    chunk_index += 1
+                
+                # Start new chunk with overlap
+                if self.overlap > 0 and chunks:
+                    overlap_text = self._get_overlap_text(current_chunk, self.overlap)
+                    current_chunk = overlap_text + " " + sentence
+                else:
+                    current_chunk = sentence
+                
+                start += len(current_chunk) - self.overlap if self.overlap > 0 else len(current_chunk)
+            else:
+                current_chunk += " " + sentence if current_chunk else sentence
+        
+        # Add final chunk
+        if current_chunk.strip() and len(current_chunk.strip()) >= self.min_chunk_size:
+            chunks.append((
+                current_chunk.strip(),
+                {
+                    "source": source,
+                    "chunk_index": chunk_index,
+                    "chunk_size": len(current_chunk.strip()),
+                    "start_pos": start,
+                    "end_pos": start + len(current_chunk)
+                }
+            ))
+        
+        # Update total_chunks in metadata
+        total_chunks = len(chunks)
+        for i, (chunk_text, metadata) in enumerate(chunks):
+            metadata["total_chunks"] = total_chunks
+        
+        return chunks
+    
+    def _split_into_sentences(self, text: str) -> List[str]:
+        """Split text into sentences using simple rules"""
+        import re
+        # Split on sentence endings, but keep the punctuation
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        return [s.strip() for s in sentences if s.strip()]
+    
+    def _get_overlap_text(self, text: str, overlap_size: int) -> str:
+        """Get the last overlap_size characters from text, preferring word boundaries"""
+        if len(text) <= overlap_size:
+            return text
+        
+        overlap_text = text[-overlap_size:]
+        # Try to start at a word boundary
+        space_index = overlap_text.find(' ')
+        if space_index > 0:
+            return overlap_text[space_index + 1:]
+        return overlap_text
+    
+    def chunk_documents(self, documents: List[str], metadatas: List[Dict]) -> tuple:
+        """
+        Chunk multiple documents and return chunked documents with updated metadata
+        Returns: (chunked_documents, chunked_metadatas, chunked_ids)
+        """
+        chunked_documents = []
+        chunked_metadatas = []
+        chunked_ids = []
+        
+        for doc_index, (document, metadata) in enumerate(zip(documents, metadatas)):
+            source = metadata.get("source", f"doc_{doc_index}")
+            chunks = self.chunk_text(document, source)
+            
+            for chunk_text, chunk_metadata in chunks:
+                # Merge original metadata with chunk metadata
+                combined_metadata = {**metadata, **chunk_metadata}
+                combined_metadata["original_doc_index"] = doc_index
+                
+                chunked_documents.append(chunk_text)
+                chunked_metadatas.append(combined_metadata)
+                chunked_ids.append(f"{source}_chunk_{chunk_metadata['chunk_index']}")
+        
+        return chunked_documents, chunked_metadatas, chunked_ids
+
 class DocumentProcessor:
     """Process documents for knowledge base with fallbacks"""
+    
+    def __init__(self, chunker: TextChunker = None):
+        self.chunker = chunker or TextChunker()
     
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         """Extract text from PDF with available libraries"""
@@ -480,10 +596,9 @@ class DocumentProcessor:
             return f"Error reading {os.path.basename(docx_path)}: {str(e)}"
     
     def process_directory(self, directory: str) -> tuple:
-        """Process all documents in directory with available libraries"""
-        documents = []
-        metadatas = []
-        ids = []
+        """Process all documents in directory with available libraries and chunking"""
+        raw_documents = []
+        raw_metadatas = []
         
         # Process text files (always available)
         for ext in ['*.txt', '*.md']:
@@ -494,13 +609,12 @@ class DocumentProcessor:
                         text = f.read()
                     
                     if text.strip() and len(text) > 100:
-                        documents.append(text)
-                        metadatas.append({
+                        raw_documents.append(text)
+                        raw_metadatas.append({
                             "source": os.path.basename(file_path),
                             "type": "text",
                             "path": file_path
                         })
-                        ids.append(f"text_{len(ids)}")
                 except:
                     continue
         
@@ -510,13 +624,12 @@ class DocumentProcessor:
             for pdf_path in pdf_files:
                 text = self.extract_text_from_pdf(pdf_path)
                 if text.strip() and len(text) > 100:
-                    documents.append(text)
-                    metadatas.append({
+                    raw_documents.append(text)
+                    raw_metadatas.append({
                         "source": os.path.basename(pdf_path),
                         "type": "pdf",
                         "path": pdf_path
                     })
-                    ids.append(f"pdf_{len(ids)}")
         
         # Process DOCX files if library available
         if DOCX_AVAILABLE:
@@ -524,25 +637,29 @@ class DocumentProcessor:
             for docx_path in docx_files:
                 text = self.extract_text_from_docx(docx_path)
                 if text.strip() and len(text) > 100:
-                    documents.append(text)
-                    metadatas.append({
+                    raw_documents.append(text)
+                    raw_metadatas.append({
                         "source": os.path.basename(docx_path),
                         "type": "docx",
                         "path": docx_path
                     })
-                    ids.append(f"docx_{len(ids)}")
         
-        return documents, metadatas, ids
+        # Apply chunking to all processed documents
+        if raw_documents:
+            return self.chunker.chunk_documents(raw_documents, raw_metadatas)
+        else:
+            return [], [], []
 
 @st.cache_resource
-def initialize_system():
+def initialize_system(chunk_size=1000, overlap=200, min_chunk_size=100):
     """Initialize the complete system with fallbacks"""
     try:
-        # Initialize components
+        # Initialize components with chunking configuration
+        text_chunker = TextChunker(chunk_size=chunk_size, overlap=overlap, min_chunk_size=min_chunk_size)
         chroma_db = ChromaDBManager()
         graph_rag = GraphRAGProcessor()
         qwen_client = QwenAPIClient()
-        doc_processor = DocumentProcessor()
+        doc_processor = DocumentProcessor(chunker=text_chunker)
         
         # Check if knowledge base needs to be populated
         doc_count = chroma_db.get_collection_count()
@@ -743,6 +860,44 @@ with st.sidebar:
         st.success("✅ API key configured!")
     
     st.markdown("---")
+    st.markdown("### ⚙️ Text Chunking Settings")
+    
+    chunk_size = st.slider(
+        "Chunk Size (characters):",
+        min_value=500,
+        max_value=2000,
+        value=1000,
+        step=100,
+        help="Maximum size of each text chunk"
+    )
+    
+    overlap = st.slider(
+        "Chunk Overlap (characters):",
+        min_value=0,
+        max_value=500,
+        value=200,
+        step=50,
+        help="Overlap between consecutive chunks"
+    )
+    
+    min_chunk_size = st.slider(
+        "Minimum Chunk Size:",
+        min_value=50,
+        max_value=500,
+        value=100,
+        step=25,
+        help="Minimum size for a chunk to be stored"
+    )
+    
+    max_chunks = st.slider(
+        "Max Chunks Retrieved:",
+        min_value=1,
+        max_value=10,
+        value=5,
+        help="Maximum number of chunks to retrieve per query"
+    )
+    
+    st.markdown("---")
     st.markdown("### 📊 System Info")
     
     # Show compatibility status
@@ -751,6 +906,12 @@ with st.sidebar:
     st.write(f"PyMuPDF: {'✅' if PYMUPDF_AVAILABLE else '❌'}")
     st.write(f"PyPDF2: {'✅' if PYPDF2_AVAILABLE else '❌'}")
     st.write(f"python-docx: {'✅' if DOCX_AVAILABLE else '❌'}")
+    
+    st.markdown("**Chunking Config:**")
+    st.write(f"Chunk Size: {chunk_size} chars")
+    st.write(f"Overlap: {overlap} chars")
+    st.write(f"Min Size: {min_chunk_size} chars")
+    st.write(f"Max Retrieved: {max_chunks} chunks")
     
     if st.button("🔄 Refresh Knowledge Base"):
         st.cache_resource.clear()
@@ -856,8 +1017,8 @@ with col2:
         with st.chat_message("assistant"):
             with st.spinner("🔍 Processing with GraphRAG..."):
                 try:
-                    # Query ChromaDB
-                    chroma_results = chroma_db.query_documents(prompt, n_results=3)
+                    # Query ChromaDB with configurable max chunks
+                    chroma_results = chroma_db.query_documents(prompt, n_results=max_chunks)
                     
                     # Get GraphRAG entities
                     graph_entities = graph_rag.get_related_entities(prompt)
