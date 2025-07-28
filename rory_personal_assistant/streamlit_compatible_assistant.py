@@ -293,7 +293,7 @@ class GraphRAGProcessor:
         return list(related)
 
 class QwenAPIClient:
-    """Qwen Max API client for response generation"""
+    """Qwen API client for response generation"""
     
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv("QWEN_API_KEY")
@@ -312,7 +312,7 @@ class QwenAPIClient:
             }
             
             data = {
-                "model": "qwen-max",
+                "model": "qwen-turbo",
                 "input": {"prompt": "Hello"},
                 "parameters": {"max_tokens": 10, "temperature": 0.1}
             }
@@ -323,9 +323,9 @@ class QwenAPIClient:
             return False
     
     def generate_response(self, query: str, context: str, graph_entities: List[str] = None) -> str:
-        """Generate response using Qwen Max API only - no fallbacks"""
+        """Generate response using Qwen API only - no fallbacks"""
         if not self.available:
-            return "❌ Qwen Max API is not available. Please contact Rory at chengy823@gmail.com"
+            return "❌ Qwen API is not available. Please contact Rory at chengy823@gmail.com"
         
         # Build comprehensive prompt
         system_prompt = """You are Rory Chen's professional AI assistant with access to his comprehensive career information through GraphRAG technology.
@@ -340,20 +340,22 @@ CORE INFORMATION ABOUT RORY:
 - Contact: chengy823@gmail.com
 
 TECHNICAL EXPERTISE:
-- Programming: Python, R, SQL (Advanced proficiency)
-- Machine Learning: Deep Learning, NLP, Computer Vision, MLOps, AutoML
+- Programming: Python, Pyspark, SQL (Advanced proficiency)
+- Machine Learning: Deep Learning, NLP, Computer Vision, MLOps, AutoML, LangChain
+- Data Processing and ETL
+- Pega Customer Decision Hub
 - Analytics: Predictive Modeling, Customer Analytics, Time Series Analysis
-- Cloud Platforms: Azure, AWS, Databricks, Cloudera CDSW
+- Cloud Platforms: Azure, Google Cloud, Databricks, Cloudera CDSW
 - Visualization: Tableau, Power BI, Dashboard Development
 
 KEY ACHIEVEMENTS:
 - Developed 20+ ML models achieving 1.5x business uplift vs control groups
 - Created AutoML pipeline reducing coding effort by 80%
-- Designed AI+BI framework with ONE AXA Dashboard (100+ monthly users)
+- Designed AI+BI framework with ONE AXA Dashboard
 - Led cloud migration from on-premise to Azure infrastructure
 
 CAREER PROGRESSION REASONING:
-- Ipsos (Market Research) → Cigna (Healthcare Analytics) → AXA (Insurance) → CITIC Bank (Banking)
+- Ipsos (Market Research) → Cigna (Healthcare Analytics) → AXA (Insurance) → China CITIC Bank Int'l (Banking)
 - Client relationships at Ipsos likely included insurance/banking companies, facilitating career transitions
 - Progressive technical leadership from individual contributor to AVP level
 - Cross-industry expertise demonstrates adaptability and broad business acumen
@@ -383,10 +385,10 @@ Please provide a comprehensive, professional response."""
             }
             
             data = {
-                "model": "qwen-max",
+                "model": "qwen-turbo",
                 "input": {"prompt": combined_prompt},
                 "parameters": {
-                    "max_tokens": 800,
+                    "max_tokens": 8000,
                     "temperature": 0.7,
                     "top_p": 0.8
                 }
@@ -754,7 +756,7 @@ with st.sidebar:
 st.markdown("""
 <div class="header-container">
     <h1>🤖 Rory's AI Assistant</h1>
-    <p>Streamlit Cloud Compatible • GraphRAG • Qwen Max API</p>
+    <p>Streamlit Cloud Compatible • GraphRAG • Qwen API</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -782,7 +784,7 @@ storage_type = getattr(chroma_db, 'storage_type', 'Unknown')
 st.markdown(f"""
 <div class="status-container">
     <strong>🧠 System Status:</strong> {doc_count} knowledge chunks in {storage_type} | 
-    {conversation_count} conversations logged | GraphRAG: ✅ Active | Qwen Max API: {api_status}
+    {conversation_count} conversations logged | GraphRAG: ✅ Active | Qwen API: {api_status}
 </div>
 """, unsafe_allow_html=True)
 
@@ -805,13 +807,13 @@ with col1:
     **Experience:** 8 years (2017-2025)
     
     **Industries:**
-    - Banking (CITIC Bank)
+    - Banking (China CITIC Bank Int'l)
     - Insurance (AXA)
     - Healthcare (Cigna)
     - Market Research (Ipsos)
                                   
     **Key Skills:**
-    - Python, PySpark, SQL
+    - Python, Pyspark, SQL
     - Machine Learning & AI, LangChain
     - Cloud Platforms (Azure, Google Cloud)
     - Pega Customer Decision Hub
@@ -830,7 +832,7 @@ with col2:
         st.session_state.messages = []
         st.session_state.messages.append({
             "role": "assistant",
-            "content": "👋 Hello! I'm Rory's AI assistant powered by GraphRAG and Qwen Max API. Ask me anything about Rory's professional background!"
+            "content": "👋 Hello! I'm Rory's AI assistant powered by GraphRAG and Qwen API. Ask me anything about Rory's professional background!"
         })
     
     # Display chat messages
@@ -905,7 +907,7 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 1rem; color: #666;">
     <p>🤖 <strong>Streamlit Cloud Compatible AI Assistant</strong></p>
-    <p>GraphRAG • {storage_type} Storage • Qwen Max API</p>
+    <p>GraphRAG • {storage_type} Storage • Qwen API</p>
     <p>📧 Contact: chengy823@gmail.com</p>
 </div>
 """.format(storage_type=storage_type), unsafe_allow_html=True)
