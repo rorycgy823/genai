@@ -1,180 +1,233 @@
-# 🤖 GenAI - Advanced AI Assistant Solutions
+# 🤖 Rory's Personal AI Assistant - Cloud-Based Solution
 
-A comprehensive collection of AI-powered assistant solutions featuring cloud-based ChromaDB, GraphRAG technology, and enterprise-grade deployment capabilities.
+An enterprise-grade AI assistant with cloud ChromaDB integration, cost tracking, and analytics dashboard. This solution provides intelligent document retrieval and conversational AI capabilities with real-time monitoring and health checks.
 
 ## 🚀 Project Overview
 
-This repository contains two main AI assistant solutions:
-
-### 1. 🏢 Rory's Personal Assistant (Cloud-Based)
-An enterprise-grade AI assistant with cloud ChromaDB integration, cost tracking, and analytics dashboard.
-
-### 2. 🎤 Voice Support Assistant (Local GraphRAG)
-A voice-enabled AI assistant with local GraphRAG implementation and document processing capabilities.
+This repository contains a production-ready cloud-based AI assistant that leverages:
+- **Cloud ChromaDB**: Scalable vector database hosted on VM (1.32.228.33)
+- **Qwen API Integration**: Advanced language model for intelligent responses
+- **Document Processing**: Automatic processing of documents in `/root/data/`
+- **Health Monitoring**: Comprehensive service health checks and monitoring
+- **Cost Analytics**: Real-time API usage and cost tracking
 
 ## 📁 Repository Structure
 
 ```
-genai/
-├── rory_personal_assistant/          # Cloud-based AI assistant
-│   ├── enhanced_streamlit_assistant.py    # Main Streamlit application
-│   ├── chroma_service.py                  # ChromaDB cloud service
-│   ├── embedding_api.py                   # Embedding API service
-│   ├── cloud_service_health_check.py     # Health monitoring
-│   ├── process_root_documents.py         # Document processing
-│   ├── test_complete_functionality.py    # Comprehensive testing
-│   ├── enhanced_requirements.txt         # Python dependencies
-│   ├── start_services.sh                 # Service startup script
-│   ├── stop_services.sh                  # Service shutdown script
-│   ├── setup_vm.sh                       # VM setup script
-│   └── ENHANCED_ASSISTANT_README.md      # Detailed documentation
-│
-├── voice_support/                    # Voice-enabled assistant
-│   ├── rory_ai_assistant_final.py        # Final voice assistant
-│   ├── simple_graphrag_assistant.py      # GraphRAG implementation
-│   ├── requirements_final.txt            # Python dependencies
-│   ├── README_FINAL.md                   # Documentation
-│   └── SIMPLE_GRAPHRAG_README.md         # GraphRAG guide
-│
-└── README.md                         # This file
+rory_personal_assistant/
+├── enhanced_streamlit_assistant.py    # 🎯 Main Streamlit Application
+├── chroma_service.py                  # 🗄️ ChromaDB Cloud Service
+├── embedding_api.py                   # 🧠 Embedding API Service
+├── cloud_service_health_check.py     # 🔍 Health Monitoring System
+├── process_root_documents.py         # 📄 Document Processing Engine
+├── test_complete_functionality.py    # 🧪 Comprehensive Testing Suite
+├── enhanced_requirements.txt         # 📦 Python Dependencies
+├── start_services.sh                 # 🚀 Service Startup Script
+├── stop_services.sh                  # 🛑 Service Shutdown Script
+├── setup_vm.sh                       # ⚙️ VM Setup & Configuration
+├── ENHANCED_ASSISTANT_README.md      # 📚 Detailed Documentation
+├── CLOUD_SETUP_SUMMARY.md           # ☁️ Cloud Setup Guide
+└── Sample Documents/                 # 📁 Test Documents
+    ├── CV_Rory_2501.pdf
+    ├── CV_Rory_2507_DS_Analytics.txt
+    └── Project experience highlight - Rory.docx
 ```
 
 ## ✨ Key Features
 
-### 🏢 Rory's Personal Assistant
-- **☁️ Cloud ChromaDB Integration**: Scalable vector database on VM (1.32.228.33)
-- **🧠 GraphRAG Technology**: Enhanced retrieval with entity relationships
-- **💰 Cost Tracking**: Real-time API cost monitoring and analytics
+### 🏢 Enterprise-Grade Capabilities
+- **☁️ Cloud ChromaDB Integration**: Scalable vector database on VM (1.32.228.33:8000)
+- **🧠 Advanced AI Processing**: Qwen API with intelligent response generation
+- **💰 Cost Tracking**: Real-time API cost monitoring ($0.002-0.012 per 1K tokens)
 - **📊 Analytics Dashboard**: Comprehensive usage and performance metrics
-- **🎯 Sample Questions**: Pre-configured queries for instant responses
 - **🔒 Enterprise Security**: Secure API key management and authentication
-- **📱 Responsive UI**: Modern Streamlit interface with dark theme
 
-### 🎤 Voice Support Assistant
-- **🗣️ Voice Recognition**: Speech-to-text capabilities
-- **📄 Document Processing**: PDF, DOCX, and text file support
-- **🕸️ Local GraphRAG**: Knowledge graph construction and querying
-- **🔍 Semantic Search**: Advanced document retrieval
-- **💬 Conversational AI**: Context-aware responses
+### 🎯 Smart Document Processing
+- **📄 Multi-Format Support**: PDF, DOCX, and text file processing
+- **🔍 Semantic Search**: Advanced document retrieval with 74+ knowledge chunks
+- **📈 Real-Time Processing**: Automatic document ingestion from `/root/data/`
+- **🎯 Sample Questions**: Pre-configured queries for instant responses
+
+### 🔧 Monitoring & Health Checks
+- **🏥 Service Health Monitoring**: Real-time status of all services
+- **📊 Performance Analytics**: Response time and usage tracking
+- **🚨 Alert System**: Automated health check notifications
+- **📈 Uptime Monitoring**: 99.9% service availability
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Streamlit, HTML/CSS/JavaScript
-- **Backend**: Python, FastAPI
-- **Database**: ChromaDB (Cloud), SQLite (Local)
-- **AI/ML**: Qwen API, Sentence Transformers, NetworkX
-- **Cloud**: Ubuntu 22.04 VM, Docker
-- **Monitoring**: Health checks, Cost tracking, Analytics
+- **Frontend**: Streamlit with responsive UI and dark theme
+- **Backend**: Python, FastAPI, ChromaDB
+- **Database**: Cloud ChromaDB (Vector Database)
+- **AI/ML**: Qwen API, Sentence Transformers
+- **Cloud**: Ubuntu 22.04 VM, Docker containers
+- **Monitoring**: Health checks, Cost tracking, Performance analytics
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.8+
-- Git
-- Cloud VM access (for cloud version)
+- Access to cloud VM (1.32.228.33)
+- Qwen API key
 
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/rorycgy823/genai.git
-cd genai
+cd genai/rory_personal_assistant
 ```
 
-### 2. Choose Your Solution
-
-#### Option A: Cloud-Based Assistant
+### 2. Install Dependencies
 ```bash
-cd rory_personal_assistant
 pip install -r enhanced_requirements.txt
-streamlit run enhanced_streamlit_assistant.py --server.port 8888
 ```
 
-#### Option B: Voice Assistant
+### 3. Configure Environment
 ```bash
-cd voice_support
-pip install -r requirements_final.txt
-python rory_ai_assistant_final.py
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# Required for cloud assistant
+# Set your Qwen API key
 export QWEN_API_KEY="your-qwen-api-key"
 
-# Optional configurations
+# Optional: Configure cloud endpoints
 export CHROMA_HOST="1.32.228.33"
 export CHROMA_PORT="8000"
 export EMBEDDING_PORT="8001"
 ```
 
-### Cloud Setup
-For the cloud-based assistant, ensure your VM is configured with:
-- ChromaDB service running on port 8000
-- Embedding API service on port 8001
-- Documents uploaded to `/root/data/` directory
+### 4. Launch Application
+```bash
+streamlit run enhanced_streamlit_assistant.py --server.port 8888
+```
+
+## 🔧 Cloud Service Management
+
+### Start All Services
+```bash
+chmod +x start_services.sh
+./start_services.sh
+```
+
+### Stop All Services
+```bash
+chmod +x stop_services.sh
+./stop_services.sh
+```
+
+### Health Check
+```bash
+python cloud_service_health_check.py
+```
 
 ## 📊 System Architecture
 
-### Cloud-Based Architecture
 ```
-User Interface (Streamlit) 
-    ↓
-Enhanced AI Assistant
-    ↓
-┌─────────────────┬─────────────────┐
-│   Qwen API      │   Cloud VM      │
-│   (LLM)         │   (1.32.228.33) │
-└─────────────────┼─────────────────┘
-                  │
-            ┌─────────────┬─────────────┐
-            │ ChromaDB    │ Embedding   │
-            │ (Port 8000) │ (Port 8001) │
-            └─────────────┴─────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    User Interface                           │
+│              (Streamlit Dashboard)                          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│              Enhanced AI Assistant                          │
+│         (enhanced_streamlit_assistant.py)                  │
+└─────────────────┬───────────────────┬───────────────────────┘
+                  │                   │
+        ┌─────────▼─────────┐  ┌──────▼──────────────────────┐
+        │    Qwen API       │  │      Cloud VM               │
+        │   (LLM Service)   │  │   (1.32.228.33)            │
+        └───────────────────┘  └──┬──────────────────────┬───┘
+                                  │                      │
+                        ┌─────────▼─────────┐  ┌─────────▼─────────┐
+                        │   ChromaDB        │  │  Embedding API    │
+                        │  (Port 8000)      │  │  (Port 8001)      │
+                        │  Vector Database  │  │  Document Proc.   │
+                        └───────────────────┘  └───────────────────┘
 ```
 
-## 🧪 Testing
+## 🧪 Testing & Validation
 
 ### Comprehensive Testing
 ```bash
-cd rory_personal_assistant
 python test_complete_functionality.py
 ```
 
-This will test:
+**Test Coverage:**
 - ✅ Cloud service connectivity
-- ✅ ChromaDB document retrieval
-- ✅ Qwen API responses
+- ✅ ChromaDB document retrieval (74 chunks)
+- ✅ Qwen API response generation
 - ✅ Sample question functionality
-- ✅ Streamlit application
+- ✅ Streamlit application health
+- ✅ Cost tracking accuracy
+
+### Health Monitoring
+```bash
+python cloud_service_health_check.py
+```
+
+**Monitoring Features:**
+- Service availability checks
+- Response time measurement
+- Error rate tracking
+- Performance analytics
+- Automated reporting
 
 ## 📈 Performance Metrics
 
-### Cloud Assistant Performance
+### Current Performance Stats
 - **Response Time**: < 3 seconds average
-- **Document Retrieval**: 74 knowledge chunks
-- **Cost Efficiency**: Real-time tracking with $0.002-0.012 per 1K tokens
-- **Uptime**: 99.9% with health monitoring
+- **Document Retrieval**: 74 knowledge chunks available
+- **Cost Efficiency**: $0.002-0.012 per 1K tokens
+- **Uptime**: 99.9% service availability
+- **Concurrent Users**: Supports multiple simultaneous sessions
 
-### Voice Assistant Performance
-- **Voice Recognition**: Real-time processing
-- **Document Processing**: Multi-format support
-- **Local GraphRAG**: Sub-second entity retrieval
+### Usage Analytics
+- Real-time cost tracking
+- Query performance monitoring
+- User interaction analytics
+- Service health dashboards
 
 ## 🔒 Security Features
 
-- **API Key Management**: Environment-based configuration
-- **Input Validation**: Comprehensive sanitization
-- **Rate Limiting**: Built-in request throttling
-- **Secure Communication**: HTTPS/TLS encryption
-- **Access Control**: Role-based permissions
+- **🔐 API Key Management**: Environment-based secure configuration
+- **🛡️ Input Validation**: Comprehensive request sanitization
+- **⚡ Rate Limiting**: Built-in request throttling
+- **🔒 Secure Communication**: HTTPS/TLS encryption
+- **👥 Access Control**: Role-based permissions
 
 ## 📚 Documentation
 
-- **[Enhanced Assistant README](rory_personal_assistant/ENHANCED_ASSISTANT_README.md)**: Detailed cloud setup guide
+- **[Enhanced Assistant README](rory_personal_assistant/ENHANCED_ASSISTANT_README.md)**: Complete setup and usage guide
 - **[Cloud Setup Summary](rory_personal_assistant/CLOUD_SETUP_SUMMARY.md)**: VM deployment instructions
-- **[Voice Assistant Guide](voice_support/README_FINAL.md)**: Voice features documentation
-- **[GraphRAG Guide](voice_support/SIMPLE_GRAPHRAG_README.md)**: Knowledge graph implementation
+- **Health Check Logs**: Automated monitoring reports
+- **API Documentation**: Endpoint specifications and examples
+
+## 🔍 How to Check ChromaDB Service Health
+
+### 1. **Automated Health Check**
+```bash
+python cloud_service_health_check.py
+```
+This will verify:
+- ChromaDB service connectivity (1.32.228.33:8000)
+- Embedding API availability (1.32.228.33:8001)
+- Document processing status
+- Service response times
+
+### 2. **Document Processing Verification**
+```bash
+python process_root_documents.py
+```
+Confirms:
+- Documents in `/root/data/` are processed
+- Embeddings are generated and stored
+- Vector database is populated
+
+### 3. **Complete Functionality Test**
+```bash
+python test_complete_functionality.py
+```
+Validates:
+- End-to-end system functionality
+- Sample question responses
+- Cost tracking accuracy
+- Web interface accessibility
 
 ## 🤝 Contributing
 
@@ -204,16 +257,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Languages**: Python, JavaScript, Shell
-- **Frameworks**: Streamlit, FastAPI, NetworkX
-- **Cloud Services**: Ubuntu VM, ChromaDB, Embedding API
-- **AI Models**: Qwen-turbo, Sentence Transformers
-- **Testing**: Comprehensive test suite with 4 major test categories
+- **Language**: Python 3.8+
+- **Framework**: Streamlit, FastAPI
+- **Database**: ChromaDB (Cloud)
+- **AI Model**: Qwen-turbo
+- **Cloud**: Ubuntu 22.04 VM
+- **Testing**: 4 comprehensive test suites
+- **Monitoring**: Real-time health checks
 
 ---
 
 ⭐ **Star this repository if you find it helpful!**
 
-🔗 **Live Demo**: [Access the cloud assistant](http://1.32.228.33:8888) (when deployed)
+🔗 **Live Demo**: [Access the assistant](http://1.32.228.33:8888) (when deployed)
 
 📧 **Support**: For questions or support, contact chengy823@gmail.com
+
+🚀 **Ready for Production**: Enterprise-grade solution with monitoring and analytics
