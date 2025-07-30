@@ -1,8 +1,8 @@
 # Streamlit Cloud Deployment Guide
 
-## 🚀 Quick Fix for NetworkX Error
+## 🚀 Quick Fix for NetworkX and Plotly Errors
 
-The error you encountered was due to missing dependencies in Streamlit Cloud. Here's the solution:
+The errors you encountered were due to dependency version conflicts in Streamlit Cloud. Here's the solution:
 
 ### ✅ **SOLUTION: Use the Cloud-Compatible Version**
 
