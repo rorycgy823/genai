@@ -1,0 +1,157 @@
+ 
+Contact: +852 68746551 
+ 
+ 
+ 
+ 
+ 
+Email: chengy823@gmail.com 
+Visa Status: HK Permanent Resident  
+ 
+ 
+Language: Cantonese(Native), Mandarin(Native), English(Proficient) 
+ 
+ 
+Rory is an experienced data scientist and analyst with strong consultancy mindset and curiosity. With over 8 years fruitful experience in insurance and 
+banking industry, Rory has led couple of local and regional projects with cutting-edge technologies. With over 15 years living experience in Hong Kong, 
+Rory can speak fluent Cantonese, Mandarin and English. As an adherent of life-long learning principle, Rory is still thirsting to continue his study in 
+various technology area and business domain. He is also a life adventurer and long-distance trekker. 
+ 
+ 
+AVP, Data Science 
+China CITIC Bank International 
+NOV 2022 – Current 
+ 
+Led data science initiatives in retail banking, optimizing AI-driven decision-making to enable precise marketing for retail 
+banking. 
+Machine Learning and MLops: 
+• 
+Led development of Next-Best-Action (NBA) model framework on Pega platform for real-time event trigger, designing 
+targeting strategies for marketing campaigns. Monitored model performance post-deployment to track business uplift 
+(+1.5x vs. control) and control effectiveness for over 20+ ML models developed. 
+• 
+Developed AutoML pipeline on Cloudera CDSW (Python), enabling business analysts to build predictive models with 
+80% reduced coding effort. 
+• 
+Migrated legacy SAS ETL pipelines to Python-based CDSW platform, improving efficiency of data workflows. 
+Customer Analytics: 
+• 
+Designed AI+BI framework and applied advanced analytics to derive actionable business insights for business planning. 
+• 
+Supported ad-hoc business analytics by advanced technologies to drive campaign effectiveness and operation efficiency. 
+Data Governance & Compliance: 
+• 
+Implemented AI model governance framework covering validation, documentation, and reviews to support internal audit 
+and regulatory requirements (e.g., CNCB). 
+• 
+Managed data governance tasks for department audits, ensuring data quality for control testing. 
+Management & Impact: 
+• 
+Managed cross-squad data projects; controlled IT project budgets. 
+• 
+Drove department recognition (ICT Award, The Asian Banker Award, Best CNCBI). 
+Assistant Data Science 
+Manager 
+AXA Hong Kong and Macau 
+SEP 2019 – NOV 2022 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Advanced data capabilities for insurance, focusing on data analytics and solutions, marketing, data governance, and cloud 
+migration. 
+CRM and Customer Analytics: 
+• 
+Supported the marketing campaign customer list generation  
+• 
+Proposed and developed predictive models (family network/EB customers, etc.) for cross-selling. 
+• 
+Performed campaign performance tracking by developing an ONE AXA Dashboard (PowerBI/Tableau) to visual all LoB 
+customers and product data, enabling over 100+ users to use per month from all LoBs. 
+• 
+Developed predictive critical disease model using health claims data using Recurrent Neural Network(GRU) model, 
+achieving 0.9+ AUC-ROC for high-risk patient identification. 
+• 
+Designed the ETL pipeline and developed Employee Benefit (EB) Dashboard (PowerBI on Azure Cloud) to monitor EB 
+companies’ profile and support the analytics needed. 
+Data Project & Analytics: 
+• 
+Supported in company-wide cloud migration as engineer and data pipeline development for Customer 360 database on 
+Azure Cloud. 
+• 
+Developed a prospect customer database and designed an ID system with integration of prospects from all channels. 
+• 
+Developed a first-in-market ESG-based go-green home solution to revamp the home pricing models (Homesurance). 
+• 
+Managed external data vendors (EPRC, 58.com) for feature enrichment 
+Culture & Collaboration: 
+• 
+Trained business units on self-service analytics on Customer 360 and PowerBI, enabling preliminary data analysis. 
+Data Science Analyst 
+Cigna, International Office 
+AUG 2018 – SEP 2019 
+Supported US Medicare analytics with focus on predictive modeling. 
+• 
+Built emergency care prediction model using US healthcare claims data, identifying patterns with abuse implications. 
+• 
+Designed Tableau dashboards for campaign tracking. 
+Senior Research Executive 
+Ipsos, Hong Kong 
+JUN 2017 – AUG 2018 
+Managed APAC Analytics Delivery to track and enhance customer experience 
+• 
+Customer pitching materials preparations. 
+• 
+Data processing and analytics, insight extraction. 
+• 
+Project management of APAC-level benchmark projects simultaneously with 6 internal local fieldwork teams. 
+• 
+Designed EFM platform supporting regional client decision-making 
+Associate Data Analyst 
+Morningstar China, Shenzhen 
+APR 2017 – JUN 2017 
+• 
+Audited and analyzed Monthly Return data with North-European funds. 
+• 
+Liaised with European fund companies and inter-companies for data quality. 
+ 
+ 
+ 
+ 
+• 
+Certificate of Generative AI Application Engineer (Senior)  
+• 
+The Asian Banker Hong Kong Excellence in Retail Finance and Technology Innovation Awards 2024 
+• 
+CAHK Star Award 2023 – Best Fintech SILVER Award 
+• 
+HKB Technology Excellence Awards 2022 – Big Data – Insurance 
+• 
+ONE AXA Award – 2021 - second place finalist 
+• 
+Innovative Technology of the year 2021 – Insurance, Customer Relationship Excellence 
+• 
+Certified Professional Member of HKIB 
+ 
+ 
+Language 
+Cantonese(Native), Mandarin(Native), English(Proficient) 
+IT Skills 
+Python, PySpark, Azure Cloud, Tableau/PowerBI, SAS, SQL, Databricks, Synapse, Cloudera, Pega, Kafka, etc. 
+Methods 
+Agile/Scrum, Machine Learning (LightGBM, XGBoost, Keras, NLP, etc.), Gen AI, LLM. 
+Office Skills 
+Expertise in Powerpoint, Word, Excel. 
+Master of Arts in Quantitative Analysis for Business (Full-time) 
+THE CITY UNIVERSITY OF HONG KONG 
+AUG 2016 – JUL 2017 
+Master of Arts in Public Policy and Management (Full-time) 
+THE CITY UNIVERSITY OF HONG KONG 
+AUG 2014 - AUG 2015 
+Bachelor of Social Sciences (Honours) in Global and Environmental Studies 
+THE EDUCATION UNIVERSITY OF HONG KONG 
+AUG 2011 - AUG 2014 
