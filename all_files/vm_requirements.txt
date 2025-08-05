@@ -1,0 +1,48 @@
+# VM Requirements for Rory's AI Assistant
+# ChromaDB and Embedding API Services
+# Author: Rory Chen
+
+# Core FastAPI and web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# ChromaDB and vector database
+chromadb>=0.4.15
+sqlite3
+
+# Embedding models and NLP
+sentence-transformers>=2.2.2
+transformers>=4.35.0
+torch>=2.1.0
+numpy>=1.24.0
+
+# HTTP requests and networking
+requests>=2.31.0
+httpx>=0.25.0
+
+# Document processing
+PyPDF2>=3.0.1
+python-docx>=0.8.11
+python-multipart>=0.0.6
+docx2txt>=0.8
+pdfplumber>=0.9.0
+
+# Data processing and utilities
+pandas>=2.0.0
+python-dateutil>=2.8.2
+
+# Logging and monitoring
+python-json-logger>=2.0.7
+
+# Optional OCR support
+pytesseract>=0.3.10
+Pillow>=10.0.0
+easyocr>=1.7.0
+
+# Optional visualization (for debugging)
+matplotlib>=3.7.0
+plotly>=5.15.0
+
+# System utilities
+psutil>=5.9.0
